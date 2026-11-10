@@ -8,6 +8,7 @@ import { relinkJobs, finalizeRelink } from './relink';
 import { mergeReplacementHistory } from './relink-model';
 import { enqueueJob, runJob, runNextJob, failureCode, JobFailure, type SyncJob } from './jobs';
 import { oldestSourceTime } from './freshness';
+import { enqueueScheduledRefreshes, refreshMinutes, refreshIntervals, recordFullRefresh, fullRefreshTimes } from './schedule';
 import { startSession, finishSession, enqueueLinkByToken, pendingSessionID } from './link';
 function transaction(t: Transaction): Entry {
   return {id:t.transaction_id, accountID:t.account_id, merchant:t.merchant_name || t.original_description || t.name || 'Transaction',
@@ -93,7 +94,12 @@ async function executeJob(env:Env,job:SyncJob):Promise<void> {
   }
   const bank=(await banks(env)).find(b=>b.item_id===job.subject);
   if(!bank)return;
+  if(job.kind==='refresh') {
+    if(env.TRANSACTIONS_REFRESH_ENABLED!=='true')throw new JobFailure('REFRESH_NOT_ENABLED',true);
+    await plaid(env,'/transactions/refresh',{access_token:bank.access_token});
+  }
   await syncBank(env,bank,job.live_balance===1,job.force_insights===1||job.attempts>0);
+  if(job.kind==='refresh')await recordFullRefresh(env,bank.item_id);
 }
 async function dashboard(env:Env) {
   const entries=await Promise.all((await banks(env,true)).map(async bank=>({id:bank.item_id,active:bank.active,...await load(env,bank.item_id),insights:await loadInsights(env,bank.item_id)})));
@@ -104,13 +110,16 @@ async function dashboard(env:Env) {
   }
   const hidden=new Set(jobs.flatMap(j=>j.status==='complete'?[j.old_bank_id]:j.new_bank_id?[j.new_bank_id]:[]));
   const visible=entries.filter(e=>!hidden.has(e.id));
-  const queued=(await env.DB.prepare("SELECT subject FROM sync_jobs WHERE kind='bank' AND state!='blocked'").all<{subject:string}>()).results;
+  const queued=(await env.DB.prepare("SELECT subject,state,last_error FROM sync_jobs WHERE kind IN ('bank','refresh')").all<{subject:string;state:string;last_error:string|null}>()).results;
+  const refreshed=await fullRefreshTimes(env),active=visible.filter(e=>e.active);
   return {accounts:visible.flatMap(e=>e.accounts.map(a=>({...a,archived:!e.active||a.archived===true}))),transactions:visible.flatMap(e=>e.transactions),
+    automaticRefreshMinutes:await refreshMinutes(env),
+    lastFullRefreshAt:active.length&&active.every(e=>refreshed.has(e.id))?oldestSourceTime(active.map(e=>refreshed.get(e.id))):null,
     statements:visible.flatMap(e=>e.insights.statements),recurring:visible.flatMap(e=>e.insights.recurring),
     history:await history(env),pendingLinkID:await pendingSessionID(env),
-    banks:visible.map(e=>({id:e.id,syncPending:queued.some(j=>j.subject===e.id),name:e.bank,archived:!e.active,checkedAt:e.checkedAt||null,updatedAt:e.bankUpdatedAt||null,
+    banks:visible.map(e=>({id:e.id,syncPending:queued.some(j=>j.subject===e.id&&j.state!=='blocked'),name:e.bank,archived:!e.active,checkedAt:e.checkedAt||null,updatedAt:e.bankUpdatedAt||null,
       balanceUpdatedAt:e.balanceUpdatedAt||null,liabilityError:e.insights.liabilityError||null,liabilityUpdatedAt:e.insights.liabilityUpdatedAt||null,
-      recurringError:e.insights.recurringError||null,recurringUpdatedAt:e.insights.recurringUpdatedAt||null,error:e.active?(e.error||null):null,importComplete:e.importComplete||false}))};
+      recurringError:e.insights.recurringError||null,recurringUpdatedAt:e.insights.recurringUpdatedAt||null,error:e.active?(e.error||queued.find(j=>j.subject===e.id&&j.state==='blocked')?.last_error||null):null,importComplete:e.importComplete||false}))};
 }
 async function widgetSnapshot(env:Env) {
   const jobs=await relinkJobs(env);
@@ -141,6 +150,7 @@ async function verifyWebhook(request:Request,env:Env,raw:string) {
 }
 export default {
   async scheduled(_controller:ScheduledController,env:Env):Promise<void> {
+    await enqueueScheduledRefreshes(env);
     await runNextJob(env,job=>executeJob(env,job));
   },
   async fetch(request:Request,env:Env,_ctx:ExecutionContext):Promise<Response> {
@@ -156,13 +166,22 @@ export default {
         if(event.webhook_type==='LINK'&&event.webhook_code==='SESSION_FINISHED'&&typeof event.link_token==='string'){await enqueueLinkByToken(env,event.link_token);return json({received:true});}
         const bank=typeof event.item_id==='string'?await env.DB.prepare('SELECT item_id FROM connections WHERE item_id=? AND active=1').bind(event.item_id).first<{item_id:string}>():null;
         if(bank && ['SYNC_UPDATES_AVAILABLE','ERROR','PENDING_EXPIRATION','LOGIN_REPAIRED','WEBHOOK_UPDATE_ACKNOWLEDGED','DEFAULT_UPDATE','RECURRING_TRANSACTIONS_UPDATE'].includes(event.webhook_code)) {
-          await enqueueJob(env,'bank',bank.item_id,{insights:event.webhook_type==='LIABILITIES'||event.webhook_code==='RECURRING_TRANSACTIONS_UPDATE'});
+          const repaired=event.webhook_code==='LOGIN_REPAIRED'&&env.TRANSACTIONS_REFRESH_ENABLED==='true';
+          await enqueueJob(env,repaired?'refresh':'bank',bank.item_id,{live:repaired,insights:event.webhook_type==='LIABILITIES'||event.webhook_code==='RECURRING_TRANSACTIONS_UPDATE'});
         }
         return json({received:true});
       }catch(e){return e instanceof SyntaxError?json({error:'Invalid event'},400):json({error:'Unable to save update; retry delivery'},503);}
     }
     if(!await matchesBearer(request,env.APP_TOKEN))return json({error:'Unauthorized'},401);
     try {
+      if(path==='/v1/settings'&&request.method==='PUT') {
+        const raw=await request.text();if(raw.length>1024)return json({error:'Too large'},413);
+        let body;try{body=JSON.parse(raw);}catch{return json({error:'Invalid settings'},400);}
+        if(!body||!refreshIntervals.includes(body.automaticRefreshMinutes))return json({error:'Choose 15, 30, or 60 minutes'},400);
+        await env.DB.prepare("INSERT INTO app_settings(key,value) VALUES('automatic_refresh_minutes',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value")
+          .bind(String(body.automaticRefreshMinutes)).run();
+        return json({automaticRefreshMinutes:body.automaticRefreshMinutes});
+      }
       if(path==='/v1/widget/access'&&request.method==='GET')return json({token:env.WIDGET_TOKEN});
       if(path.startsWith('/v1/relink/')&&request.method==='POST')return json(await startSession(env,path.split('/').pop()));
       if(path==='/v1/link/start'&&request.method==='POST')return json(await startSession(env));
@@ -183,17 +202,9 @@ export default {
         const gate=await env.DB.prepare("INSERT INTO snapshots(id,lease_until) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET lease_until=excluded.lease_until WHERE lease_until<?")
           .bind('_request_gate:'+bank.item_id,Date.now()+30000,Date.now()).run();
         if(!gate.meta.changes)return json({error:'Please wait a moment before refreshing again.'},429);
-        let refreshFailed=false;
-        // Explicit live refresh only: automatic syncs and webhook deliveries must never trigger another bank refresh.
-        // Enabled for our verified free Trial plan; disable before switching to paid Plaid pricing.
-        if(bankRefresh[2]==='balances'&&env.TRANSACTIONS_REFRESH_ENABLED==='true') {
-          try {await plaid(env,'/transactions/refresh',{access_token:bank.access_token});}
-          catch {refreshFailed=true;}
-        }
-        // Queue after the fresh-data request so a timer cannot finish this manual sync using older data.
-        const id=await enqueueJob(env,'bank',bank.item_id,{live:bankRefresh[2]==='balances'});
+        const full=bankRefresh[2]==='balances'&&env.TRANSACTIONS_REFRESH_ENABLED==='true';
+        const id=await enqueueJob(env,full?'refresh':'bank',bank.item_id,{live:bankRefresh[2]==='balances'});
         const completed=await runJob(env,id,job=>executeJob(env,job));
-        if(refreshFailed)return json({error:'Balances were checked, but a fresh transaction update could not be requested. Try again shortly.'},503);
         return json({received:true,completed});
       }
       if(['/v1/sync','/v1/balances'].includes(path)&&request.method==='POST') {

@@ -707,17 +707,17 @@ struct SettingsView: View {
                     Text("Optional Face ID or passcode protection.").font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Data") {
-                    Picker("Automatic refresh", selection: Binding(get: { store.automaticRefreshMinutes }, set: { store.automaticRefreshMinutes = $0 })) {
+                    Picker("Automatic refresh", selection: Binding(get: { store.automaticRefreshMinutes }, set: { minutes in Task { await store.updateRefreshInterval(minutes) } })) {
                         Text("15 minutes").tag(15)
                         Text("30 minutes").tag(30)
                         Text("1 hour").tag(60)
-                    }
+                    }.disabled(store.busy || store.savingRefreshInterval)
                     Button("Clear saved data on this iPhone", role: .destructive) { clearCache = true }
                 }
                 Section("How updates work") {
                     VStack(alignment: .leading, spacing: 14) {
-                        Label("Opening or returning to Tally refreshes your banks when the selected interval has passed. Saved data appears immediately.", systemImage: "iphone")
-                        Label("Tap Refresh to check for fresh transactions and live balances at any time.", systemImage: "arrow.clockwise")
+                        Label("Your banks refresh automatically on the server at the selected interval, even when Tally is closed.", systemImage: "iphone")
+                        Label("Open Tally to see the latest saved data. Tap Refresh for an extra bank refresh at any time.", systemImage: "arrow.clockwise")
                     }.font(.subheadline).padding(.vertical, 5)
                     Text("New purchases may take time to become available through your bank. Updates also arrive automatically when Plaid reports new activity.").font(.caption).foregroundStyle(.secondary)
                 }

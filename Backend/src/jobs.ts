@@ -1,7 +1,7 @@
 import type { Env } from './plaid';
 
 export interface SyncJob {
-  id:string;kind:'bank'|'link';subject:string;revision:number;attempts:number;
+  id:string;kind:'bank'|'link'|'refresh';subject:string;revision:number;attempts:number;
   live_balance:number;force_insights:number;due_at:number;lease:string|null;lease_until:number;state:string;
 }
 export class JobFailure extends Error {
