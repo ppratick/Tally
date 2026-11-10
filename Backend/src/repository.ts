@@ -1,6 +1,9 @@
 import { encrypt, decrypt, type Bank, type Env } from './plaid';
 import type { Snapshot } from './model';
 interface ConnectionRow { item_id:string; institution_id:string; token_encrypted:string|null; active:number }
+const historyDayFormatters=new Map([['America/New_York',new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'})]]);
+// Initialize the default formatter once at Worker startup instead of rebuilding ICU state inside every refresh.
+historyDayFormatters.get('America/New_York')!.format(new Date(0));
 export async function initializeConnections(env:Env):Promise<void> {
   if(await env.DB.prepare("SELECT value FROM app_settings WHERE key='connections_initialized'").first())return;
   const seeds=JSON.parse(env.PLAID_ITEMS||'[]') as Bank[];
@@ -15,6 +18,13 @@ export async function banks(env:Env,includeArchived=false):Promise<Bank[]> {
   const rows=await env.DB.prepare('SELECT item_id,institution_id,token_encrypted,active FROM connections'+(includeArchived?'':' WHERE active=1')).all<ConnectionRow>();
   return Promise.all(rows.results.map(async row=>({item_id:row.item_id,institution_id:row.institution_id,active:row.active===1,
     access_token:row.token_encrypted?await decrypt<string>(env,row.token_encrypted):''})));
+}
+export async function bankByID(env:Env,id:string):Promise<Bank|undefined> {
+  await initializeConnections(env);
+  const row=await env.DB.prepare('SELECT item_id,institution_id,token_encrypted,active FROM connections WHERE item_id=? AND active=1')
+    .bind(id).first<ConnectionRow>();
+  return row?{item_id:row.item_id,institution_id:row.institution_id,active:true,
+    access_token:row.token_encrypted?await decrypt<string>(env,row.token_encrypted):''}:undefined;
 }
 export async function load(env:Env,id:string,includeTransactions=true):Promise<Snapshot> {
   const row=await env.DB.prepare('SELECT data FROM snapshots WHERE id=?').bind(id).first<{data:string}>();
@@ -34,7 +44,10 @@ export function pendingAmount(state:Snapshot,accountID:string,currency:string):n
 }
 export function historyStatements(env:Env,bank:Bank,state:Snapshot,lease:string):D1PreparedStatement[] {
   const observed=state.checkedAt||new Date().toISOString();
-  const day=new Date(observed).toLocaleDateString('en-CA',{timeZone:env.HISTORY_TIME_ZONE||'America/New_York'});
+  const zone=env.HISTORY_TIME_ZONE||'America/New_York';
+  let formatter=historyDayFormatters.get(zone);
+  if(!formatter){formatter=new Intl.DateTimeFormat('en-CA',{timeZone:zone});historyDayFormatters.set(zone,formatter);}
+  const day=formatter.format(new Date(observed));
   return state.accounts.filter(a=>!a.archived).map(account=>env.DB.prepare(`INSERT INTO balance_history(account_id,day,bank_id,observed_at,current,available,pending,currency)
     SELECT ?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM connections WHERE item_id=? AND active=1) AND EXISTS(SELECT 1 FROM snapshots WHERE id=? AND lease=?)
     ON CONFLICT(account_id,day) DO UPDATE SET observed_at=excluded.observed_at,current=excluded.current,available=excluded.available,pending=excluded.pending,currency=excluded.currency`)

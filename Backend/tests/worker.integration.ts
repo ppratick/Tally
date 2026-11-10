@@ -4,6 +4,7 @@ import {randomBytes,createHash} from 'node:crypto';
 import {generateKeyPair,exportJWK,SignJWT} from 'jose';
 import worker from '../src/index.ts';
 import {encrypt} from '../src/plaid.ts';
+import {historyStatements} from '../src/repository.ts';
 import {database} from './fixtures/database.ts';
 const {DB,sqlite}=database(readFileSync('schema.sql','utf8'));
 const env:any={DB,PLAID_CLIENT_ID:'test-client',PLAID_SECRET:'test-secret',PLAID_ENV:'sandbox',PLAID_ITEMS:'[]',APP_TOKEN:randomBytes(32).toString('hex'),WIDGET_TOKEN:randomBytes(32).toString('hex'),TOKEN_ENCRYPTION_KEY:randomBytes(32).toString('base64'),PUBLIC_URL:'https://example.com'};
@@ -13,7 +14,7 @@ sqlite.prepare("INSERT INTO app_settings VALUES('connections_initialized','1')")
 sqlite.prepare('INSERT INTO connections(item_id,institution_id,token_encrypted,created_at) VALUES(?,?,?,?)').run('test-bank','test-institution',await encrypt(env,'test-access'),new Date().toISOString());
 sqlite.prepare('INSERT INTO snapshots(id,data) VALUES(?,?)').run('test-bank',JSON.stringify({bank:'Test Bank',metadataLoaded:true,cursor:'original',accounts:[account],transactions:[previous],importComplete:true,balanceUpdatedAt:'2026-11-08T10:00:00Z',bankUpdatedAt:'2026-11-09T10:00:00Z'}));
 const {privateKey,publicKey}=await generateKeyPair('ES256');const jwk=await exportJWK(publicKey);
-let fail=true,transactionCalls=0,deliverDuringSync=false,refreshCalls=0,refreshFails=false;
+let fail=true,transactionCalls=0,deliverDuringSync=false,refreshCalls=0,refreshFails=false,noChanges=false,pendingReplacement=false;
 const routes:string[]=[];
 const ctx:any={waitUntil(){throw Error('Work must be persisted, not run in HTTP waitUntil');}};
 async function signed(event:any,targetEnv=env){const raw=JSON.stringify(event),hash=createHash('sha256').update(raw).digest('hex');const jwt=await new SignJWT({request_body_sha256:hash}).setProtectedHeader({alg:'ES256',kid:'test-key'}).setIssuedAt().sign(privateKey);return worker.fetch(new Request('https://example.com/webhooks/plaid',{method:'POST',body:raw,headers:{'Plaid-Verification':jwt}}),targetEnv,ctx);}
@@ -29,7 +30,7 @@ globalThis.fetch=async(input:any,init:any)=>{
   transactionCalls++;
   if(fail)return Response.json({error_code:'INSTITUTION_DOWN',request_id:'test-request'},{status:503});
   if(deliverDuringSync){deliverDuringSync=false;assert.equal((await signed({webhook_type:'LIABILITIES',webhook_code:'DEFAULT_UPDATE',item_id:'test-bank'})).status,200);}
-  return Response.json({added:[{transaction_id:'new',account_id:'checking',merchant_name:'Example',amount:10,iso_currency_code:'USD',date:'2026-11-10',pending:false,personal_finance_category:{primary:'FOOD_AND_DRINK'}}],modified:[],removed:[],next_cursor:'next',has_more:false,transactions_update_status:'HISTORICAL_UPDATE_COMPLETE'});
+  return Response.json({added:noChanges?[]:[{transaction_id:pendingReplacement?'posted-pending':'new',pending_transaction_id:pendingReplacement?'cached-pending':null,account_id:'checking',merchant_name:'Example',amount:pendingReplacement?3.25:10,iso_currency_code:'USD',date:'2026-11-10',pending:false,personal_finance_category:{primary:'FOOD_AND_DRINK'}}],modified:[],removed:pendingReplacement?[{transaction_id:'cached-pending'}]:[],next_cursor:'next',has_more:false,transactions_update_status:'HISTORICAL_UPDATE_COMPLETE'});
  }
  if(route==='/accounts/get'||route==='/accounts/balance/get')return Response.json({accounts:[{account_id:'checking',name:'Checking',mask:'0000',type:'depository',balances:{current:100,available:100,iso_currency_code:'USD',limit:null}}]});
  if(route==='/item/get')return Response.json({item:{error:null,consented_products:[]},status:{transactions:{last_successful_update:'2026-11-09T10:00:00Z'}}});
@@ -90,3 +91,47 @@ assert.ok(Date.parse(afterScheduled.lastFullRefreshAt)>Date.now()-60000);
 assert.equal(afterScheduled.transactions.length,2);
 await worker.scheduled({} as any,env);assert.equal(refreshCalls,callsBeforeRead+1);
 console.log('Server refresh passed: cron refreshes due banks with no phone; reads call no Plaid APIs; settings are authenticated and validated; completed refresh time is server-owned; repeated ticks do not refresh fresh banks.');
+// Preserve pending balances without reading transaction rows when the cursor has no changes.
+const cachedPending={...previous,id:'cached-pending',amount:2.75,pending:true};
+sqlite.prepare('INSERT INTO transactions VALUES(?,?,?,?)').run(cachedPending.id,'test-bank','checking',JSON.stringify(cachedPending));
+let cachedState=JSON.parse(String(sqlite.prepare("SELECT data FROM snapshots WHERE id='test-bank'").get()!.data));
+cachedState.pendingTotals={checking:2.75};
+sqlite.prepare("UPDATE snapshots SET data=? WHERE id='test-bank'").run(JSON.stringify(cachedState));
+const queries:string[]=[];
+const trackedEnv={...env,DB:{...DB,prepare(sql:string){queries.push(sql);return DB.prepare(sql);}}};
+const historyReads=()=>queries.filter(sql=>sql==='SELECT data FROM transactions WHERE bank_id=?').length;
+noChanges=true;clearRequestGate();
+assert.equal((await manual('balances',trackedEnv)).status,200);assert.equal(historyReads(),0);
+cachedState=JSON.parse(String(sqlite.prepare("SELECT data FROM snapshots WHERE id='test-bank'").get()!.data));
+assert.equal(cachedState.pendingTotals.checking,2.75);
+assert.equal(sqlite.prepare("SELECT pending FROM balance_history WHERE account_id='checking' ORDER BY day DESC LIMIT 1").get()!.pending,2.75);
+assert.equal(sqlite.prepare('SELECT count(*) AS count FROM transactions').get()!.count,3);
+// On a pending-to-posted change, read the saved history and recompute instead of reusing the cached pending total.
+noChanges=false;pendingReplacement=true;queries.length=0;clearRequestGate();
+assert.equal((await manual('balances',trackedEnv)).status,200);assert.equal(historyReads(),1);
+cachedState=JSON.parse(String(sqlite.prepare("SELECT data FROM snapshots WHERE id='test-bank'").get()!.data));
+assert.equal(cachedState.pendingTotals.checking,0);
+assert.equal(sqlite.prepare("SELECT pending FROM balance_history WHERE account_id='checking' ORDER BY day DESC LIMIT 1").get()!.pending,0);
+assert.equal(sqlite.prepare("SELECT count(*) AS count FROM transactions WHERE id='cached-pending'").get()!.count,0);
+assert.equal(sqlite.prepare('SELECT count(*) AS count FROM transactions').get()!.count,3);
+// A legacy snapshot without cached pending totals must still load history and repair the cache.
+delete cachedState.pendingTotals;
+sqlite.prepare("UPDATE snapshots SET data=? WHERE id='test-bank'").run(JSON.stringify(cachedState));
+noChanges=true;pendingReplacement=false;queries.length=0;clearRequestGate();
+assert.equal((await manual('balances',trackedEnv)).status,200);assert.equal(historyReads(),1);
+// An unrelated credential must not be decrypted during a targeted refresh.
+sqlite.prepare('INSERT INTO connections(item_id,institution_id,token_encrypted,created_at) VALUES(?,?,?,?)').run('unrelated','test','invalid','test');
+clearRequestGate();assert.equal((await manual()).status,200);
+sqlite.prepare("DELETE FROM connections WHERE item_id='unrelated'").run();
+const testBank={item_id:'test-bank',access_token:'test-only',institution_id:'test',active:true};
+for(const [observed,day,zone] of [
+ ['2026-03-08T04:59:00Z','2026-03-07','America/New_York'],
+ ['2026-03-08T07:01:00Z','2026-03-08','America/New_York'],
+ ['2026-11-02T04:59:00Z','2026-11-01','America/New_York'],
+ ['2026-11-02T05:00:00Z','2026-11-02','America/New_York'],
+ ['2026-11-10T07:59:00Z','2026-11-09','America/Los_Angeles']
+]) {
+ const statement=historyStatements({...env,HISTORY_TIME_ZONE:zone},testBank,{...cachedState,checkedAt:observed},'test-lease')[0] as any;
+ assert.equal(statement.args[1],day);
+}
+console.log('Refresh optimization passed: unchanged sync skips saved-history reads while preserving pending balances; changes and legacy caches load history; only the target credential is decrypted; cached date formatters handle DST and configured time zones.');

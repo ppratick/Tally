@@ -2,7 +2,7 @@ import { decodeProtectedHeader, importJWK, jwtVerify } from 'jose';
 import type { AccountsGetResponse, TransactionsSyncResponse, Transaction, ItemGetResponse, InstitutionsGetByIdResponse } from 'plaid/legacy';
 import { applyChanges, type Account, type Entry, type Snapshot } from './model';
 import { plaid, matchesBearer, PlaidError, type Env, type Bank } from './plaid';
-import { banks, load, history, historyStatements, pendingAmount, transactionStatements, accountMappings } from './repository';
+import { banks, bankByID, load, history, historyStatements, pendingAmount, transactionStatements, accountMappings } from './repository';
 import { loadInsights, syncInsights } from './insights';
 import { relinkJobs, finalizeRelink } from './relink';
 import { mergeReplacementHistory } from './relink-model';
@@ -28,7 +28,8 @@ export async function syncBank(env: Env,bank:Bank,liveBalance=false,forceInsight
   if (!acquired.meta.changes) throw new JobFailure('SYNC_BUSY');
   let old:Snapshot|undefined,committed=false;
   try {
-    old=await load(env,bank.item_id);
+    old=await load(env,bank.item_id,false);
+    let transactionsLoaded=!old.transactionsExternal;
     const aliases=await accountMappings(env,bank.item_id);
     let name=old.bank,logo=old.logo||null;
     if (!old.metadataLoaded || name==='Bank' || !name) {
@@ -53,9 +54,16 @@ export async function syncBank(env: Env,bank:Bank,liveBalance=false,forceInsight
     const response=await plaid<AccountsGetResponse>(env,liveBalance?'/accounts/balance/get':'/accounts/get',{access_token:bank.access_token});
     const health=await plaid<ItemGetResponse>(env,'/item/get',{access_token:bank.access_token});
     const shared=accountsFrom(response,bank,name,logo).map(a=>({...a,id:aliases.get(a.id)||a.id}));
+    // An unchanged cursor does not require reading/parsing the complete saved transaction history.
+    // Load it whenever changes or account/currency changes require recomputing pending totals.
+    if(old.transactionsExternal&&(added.length||modified.length||removed.length||!old.pendingTotals||
+      shared.some(a=>old!.accounts.find(previous=>previous.id===a.id)?.currency!==a.currency))) {
+      old=await load(env,bank.item_id);transactionsLoaded=true;
+    }
     const sharedIDs=new Set(shared.map(a=>a.id));
     const archived=old.accounts.filter(a=>!sharedIDs.has(a.id)).map(a=>({...a,archived:true}));
     const state: Snapshot={cursor,bank:name, accounts:[...shared,...archived], transactions:applyChanges(old.transactions,added,modified,removed),
+      transactionsExternal:!transactionsLoaded,pendingTotals:transactionsLoaded?undefined:old.pendingTotals,
       checkedAt:new Date().toISOString(),bankUpdatedAt:health.status?.transactions?.last_successful_update || null,
       balanceUpdatedAt:liveBalance?new Date().toISOString():old.balanceUpdatedAt,error:health.item.error?.error_code || null,importComplete:complete||old.importComplete,metadataLoaded:true,logo};
     const active=await env.DB.prepare('SELECT active FROM connections WHERE item_id=?').bind(bank.item_id).first<{active:number}>();
@@ -92,7 +100,7 @@ async function executeJob(env:Env,job:SyncJob):Promise<void> {
     if(result.status==='pending')throw new JobFailure('LINK_PENDING');
     return;
   }
-  const bank=(await banks(env)).find(b=>b.item_id===job.subject);
+  const bank=await bankByID(env,job.subject);
   if(!bank)return;
   if(job.kind==='refresh') {
     if(env.TRANSACTIONS_REFRESH_ENABLED!=='true')throw new JobFailure('REFRESH_NOT_ENABLED',true);
@@ -197,7 +205,7 @@ export default {
       if(path==='/v1/dashboard' && request.method==='GET')return json(await dashboard(env));
       const bankRefresh=path.match(/^\/v1\/banks\/([^/]+)\/(sync|balances)$/);
       if(bankRefresh&&request.method==='POST') {
-        const bank=(await banks(env)).find(b=>b.item_id===bankRefresh[1]);
+        const bank=await bankByID(env,bankRefresh[1]);
         if(!bank)return json({error:'Unknown bank'},404);
         const gate=await env.DB.prepare("INSERT INTO snapshots(id,lease_until) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET lease_until=excluded.lease_until WHERE lease_until<?")
           .bind('_request_gate:'+bank.item_id,Date.now()+30000,Date.now()).run();
