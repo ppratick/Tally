@@ -1,5 +1,6 @@
 import type { LinkTokenGetResponse, AccountsGetResponse, ItemGetResponse } from 'plaid/legacy';
 import { banks, load, saveConnection } from './repository';
+import { enqueueJob } from './jobs';
 import { mapReplacement } from './relink';
 import { plaid, encrypt, decrypt, digest, type Env, type Bank } from './plaid';
 type Sync = (env:Env,bank:Bank,live?:boolean)=>Promise<void>;
@@ -84,9 +85,9 @@ export async function finishSession(env:Env,id:string,sync:Sync) {
     return {status:'pending',message:'Finish connecting in Plaid, then check the connection again.'};
   }finally{await env.DB.prepare('UPDATE link_sessions SET lease_until=0 WHERE id=?').bind(id).run();}
 }
-export async function finishByToken(env:Env,token:string,sync:Sync) {
+export async function enqueueLinkByToken(env:Env,token:string) {
   const row=await env.DB.prepare('SELECT id FROM link_sessions WHERE token_hash=?').bind(await digest(token)).first<{id:string}>();
-  if(row)await finishSession(env,row.id,sync);
+  if(row)await enqueueJob(env,'link',row.id);
 }
 export async function pendingSessionID(env:Env):Promise<string|null> {
   const row=await env.DB.prepare("SELECT id FROM link_sessions WHERE id NOT IN (SELECT session_id FROM relink_jobs) AND status='pending' AND expires_at>? ORDER BY created_at DESC LIMIT 1").bind(new Date().toISOString()).first<{id:string}>();

@@ -42,7 +42,7 @@ struct TallyWidgetView: View {
     var body: some View {
         Group {
             if let snapshot = entry.snapshot, !snapshot.accounts.isEmpty {
-                if family == .systemMedium { medium(snapshot) } else { small(snapshot) }
+                if family == .systemMedium { medium(snapshot).privacySensitive() } else { small(snapshot).privacySensitive() }
             } else {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Tally", systemImage: "chart.bar.fill").font(.headline)
@@ -92,8 +92,8 @@ struct TallyWidgetView: View {
     }
     private func synced(_ snapshot: WidgetSnapshot) -> some View {
         Group {
-            if let date = snapshot.updatedDate { Text("Synced \(date, style: .relative) ago") }
-            else { Text("Open Tally to update") }
+            if let date = snapshot.updatedDate { Text("Updated \(date, style: .relative) ago") }
+            else { Text("Update time unavailable") }
         }.font(.system(size: 9)).foregroundStyle(.white.opacity(0.65)).lineLimit(1)
     }
 }

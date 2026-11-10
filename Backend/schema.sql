@@ -53,3 +53,12 @@ CREATE TABLE IF NOT EXISTS bank_insights (bank_id TEXT PRIMARY KEY, data TEXT NO
 
 CREATE TABLE IF NOT EXISTS relink_jobs (session_id TEXT PRIMARY KEY, old_bank_id TEXT NOT NULL, new_bank_id TEXT, status TEXT NOT NULL DEFAULT 'pending');
 CREATE TABLE IF NOT EXISTS account_mappings (bank_id TEXT NOT NULL, source_id TEXT NOT NULL, canonical_id TEXT NOT NULL, PRIMARY KEY(bank_id,source_id));
+
+CREATE TABLE IF NOT EXISTS sync_jobs (
+  id TEXT PRIMARY KEY, kind TEXT NOT NULL, subject TEXT NOT NULL,
+  revision INTEGER NOT NULL DEFAULT 1, attempts INTEGER NOT NULL DEFAULT 0,
+  live_balance INTEGER NOT NULL DEFAULT 0, force_insights INTEGER NOT NULL DEFAULT 0,
+  due_at INTEGER NOT NULL, lease TEXT, lease_until INTEGER NOT NULL DEFAULT 0,
+  state TEXT NOT NULL DEFAULT 'pending', last_error TEXT
+);
+CREATE INDEX IF NOT EXISTS sync_jobs_due ON sync_jobs(state,due_at,lease_until);

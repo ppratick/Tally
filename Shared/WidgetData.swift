@@ -9,6 +9,7 @@ struct WidgetAccount: Codable, Identifiable, Sendable {
     let isCredit: Bool
     let currency: String
     let balance: Double?
+    var updatedAt: String? = nil
     var shortBank: String { bank.localizedCaseInsensitiveContains("America") ? "BofA" : bank }
 }
 struct WidgetSnapshot: Codable, Sendable {
@@ -18,9 +19,12 @@ struct WidgetSnapshot: Codable, Sendable {
     var debt: Double { accounts.filter { $0.isCredit && $0.currency == "USD" }.compactMap(\.balance).reduce(0,+) }
     var net: Double { cash - debt }
     var updatedDate: Date? {
-        let formatter=ISO8601DateFormatter();formatter.formatOptions=[.withInternetDateTime,.withFractionalSeconds]
-        return formatter.date(from:date) ?? ISO8601DateFormatter().date(from:date)
+        guard !accounts.isEmpty else { return nil }
+        let dates = accounts.compactMap { widgetSourceDate($0.updatedAt) }
+        guard dates.count == accounts.count else { return nil }
+        return dates.min()
     }
+
 }
 struct WidgetPreferences: Codable, Sendable {
     var server: String
@@ -37,6 +41,17 @@ struct WidgetPreferences: Codable, Sendable {
         }.sorted { (order.firstIndex(of:$0.id) ?? Int.max) < (order.firstIndex(of:$1.id) ?? Int.max) }
         return result
     }
+}
+func widgetSourceDate(_ value: String?) -> Date? {
+    guard let value else { return nil }
+    let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter.date(from: value) ?? ISO8601DateFormatter().date(from: value)
+}
+func oldestWidgetSource(_ values: [String?]) -> String? {
+    values.compactMap { value -> (String, Date)? in
+        guard let value, let date = widgetSourceDate(value) else { return nil }
+        return (value, date)
+    }.min { $0.1 < $1.1 }?.0
 }
 enum WidgetStorage {
     private static let service="com.pratick.Tally.widget"

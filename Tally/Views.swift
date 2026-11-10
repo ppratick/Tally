@@ -595,7 +595,7 @@ private struct ConnectionStatus: View {
     let bank: BankConnection
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
-            if bank.error != nil || !bank.importComplete {
+            if bank.error != nil || !bank.importComplete || bank.syncPending == true {
                 Label(bank.statusText, systemImage: bank.error == nil ? "clock" : "exclamationmark.circle").foregroundStyle(.orange)
             }
             if let date = bank.updateDate {
@@ -608,7 +608,7 @@ private struct ConnectionStatus: View {
             }
             if bank.error == "ITEM_LOGIN_REQUIRED" || bank.error == "PENDING_EXPIRATION" {
                 Button("Reconnect securely") { Task { await store.reconnect(bank) } }.disabled(store.busy).padding(.top, 3)
-            } else if bank.error != nil || !bank.importComplete {
+            } else if bank.error != nil || !bank.importComplete || bank.syncPending == true {
                 Button("Try again") { Task { await store.refreshManually() } }.disabled(store.busy).padding(.top, 3)
             }
         }.font(.caption).frame(maxWidth: .infinity, alignment: .leading)

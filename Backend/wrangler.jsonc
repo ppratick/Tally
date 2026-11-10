@@ -4,7 +4,24 @@
   "compatibility_date": "2026-11-09",
   "workers_dev": true,
   "preview_urls": false,
-  "observability": {"enabled": false},
-  "vars": {"PLAID_ENV": "production", "PUBLIC_URL":"https://tally-personal-api.mmkjp6pw26.workers.dev", "HISTORY_TIME_ZONE":"America/New_York"},
-  "d1_databases": [{"binding":"DB","database_name":"tally-personal","database_id":"025fe4d5-cffb-4dbb-89cb-9b40d188eea4"}]
+  "observability": {
+    "enabled": false
+  },
+  "vars": {
+    "PLAID_ENV": "production",
+    "PUBLIC_URL": "https://tally-personal-api.mmkjp6pw26.workers.dev",
+    "HISTORY_TIME_ZONE": "America/New_York"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tally-personal",
+      "database_id": "025fe4d5-cffb-4dbb-89cb-9b40d188eea4"
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  }
 }

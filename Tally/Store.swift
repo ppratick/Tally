@@ -130,7 +130,19 @@ enum AppError: LocalizedError {
         busy = true; error = nil
         defer { busy = false }
         do {
-            let result: Dashboard = try await request(path, method: path == "/v1/dashboard" ? "GET" : "POST", settings: settings)
+            let result: Dashboard
+            if path == "/v1/balances" || path == "/v1/sync" {
+                let current: Dashboard = try await request("/v1/dashboard", settings: settings)
+                struct Receipt: Decodable { let received: Bool }
+                var firstFailure: Error?
+                for bank in current.banks.filter({ $0.archived != true }) {
+                    do {
+                        let _: Receipt = try await request("/v1/banks/\(bank.id)/\(path == "/v1/balances" ? "balances" : "sync")", method: "POST", settings: settings)
+                    } catch { if firstFailure == nil { firstFailure = error } }
+                }
+                result = try await request("/v1/dashboard", settings: settings)
+                if let firstFailure { error = firstFailure.localizedDescription }
+            } else { result = try await request(path, settings: settings) }
             dashboard = result; isOffline = false; savedAt = .now
             pendingLinkSessionID = result.pendingLinkID
             UserDefaults.standard.set(pendingLinkSessionID, forKey: "pendingLinkSessionID")
@@ -272,7 +284,8 @@ enum AppError: LocalizedError {
             WidgetStorage.save(config, key: "configuration")
         }
         let accounts = homeAccounts.map { account in
-            WidgetAccount(id: account.id, bank: account.bank, name: accountName(account), mask: account.mask, isCredit: account.isCredit, currency: account.currency, balance: dashboard.displayBalance(for: account))
+            let bank = dashboard.banks.first { $0.id == account.bankID }
+            return WidgetAccount(id: account.id, bank: account.bank, name: accountName(account), mask: account.mask, isCredit: account.isCredit, currency: account.currency, balance: dashboard.displayBalance(for: account), updatedAt: oldestWidgetSource([bank?.balanceUpdatedAt, bank?.updatedAt]))
         }
         WidgetStorage.save(WidgetSnapshot(date: ISO8601DateFormatter().string(from: savedAt ?? .now), accounts: accounts), key: "snapshot")
         WidgetCenter.shared.reloadTimelines(ofKind: "TallyBalances")

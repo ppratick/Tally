@@ -63,6 +63,7 @@ struct BankConnection: Codable, Identifiable {
     let error: String?
     let importComplete: Bool
     var archived: Bool? = nil
+    var syncPending: Bool? = nil
     var liabilityError: String? = nil
     var liabilityUpdatedAt: String? = nil
     var recurringError: String? = nil
@@ -75,7 +76,7 @@ struct BankConnection: Codable, Identifiable {
         case "ITEM_LOGIN_REQUIRED", "PENDING_EXPIRATION": return "Sign in again to reconnect this bank."
         case "PRODUCT_NOT_READY": return "Your bank is still preparing transaction history. Sync again shortly."
         case .some: return "This bank couldn't update. Your last saved data is still available."
-        case nil: return importComplete ? "Connected" : "Importing transaction history"
+        case nil: return syncPending == true ? "Update queued. Saved data is shown until it finishes." : importComplete ? "Connected" : "Importing transaction history"
         }
     }
 }
