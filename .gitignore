@@ -1,0 +1,30 @@
+.DS_Store
+.env*
+.dev.vars*
+node_modules/
+.wrangler/
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.mobileprovision
+Pairing.plist
+
+# Local credentials, financial caches, and exports
+connection.json
+backend-secrets.json
+relink-backup.json
+relink-sessions.json
+dashboard.json
+*.p8
+*.p12
+*.key
+*.pem
+
+# Local build and signing output
+.build/
+.swiftpm/
+*.xcarchive/
+*.ipa
+*.dSYM/
+*.log

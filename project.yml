@@ -1,0 +1,74 @@
+name: Tally
+options:
+  bundleIdPrefix: com.pratick
+  deploymentTarget:
+    iOS: '18.0'
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    TARGETED_DEVICE_FAMILY: '1'
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_CFBundleDisplayName: Tally
+    INFOPLIST_KEY_TallyKeychainGroup: '$(AppIdentifierPrefix)com.pratick.Tally.shared'
+    INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+    PRODUCT_BUNDLE_IDENTIFIER: com.pratick.Tally
+    MARKETING_VERSION: '1.0'
+    CURRENT_PROJECT_VERSION: '1'
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+targets:
+  Tally:
+    type: application
+    platform: iOS
+    sources:
+      - path: Tally
+      - path: Shared
+    info:
+      path: Tally/Info.plist
+      properties:
+        CFBundleDisplayName: Tally
+        TallyKeychainGroup: '$(AppIdentifierPrefix)com.pratick.Tally.shared'
+        CFBundleURLTypes:
+          - CFBundleURLName: com.pratick.Tally
+            CFBundleURLSchemes: [tally]
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIRequiresFullScreen: true
+    dependencies:
+      - target: TallyWidget
+        embed: true
+    settings:
+      base:
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: Tally/Tally.entitlements
+        INFOPLIST_KEY_NSFaceIDUsageDescription: Unlock your private financial dashboard.
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  TallyWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: TallyWidget
+      - path: Shared
+      - path: Tally/Assets.xcassets
+    info:
+      path: TallyWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Tally
+        TallyKeychainGroup: '$(AppIdentifierPrefix)com.pratick.Tally.shared'
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pratick.Tally.Widget
+        CODE_SIGN_ENTITLEMENTS: TallyWidget/TallyWidget.entitlements
+        CODE_SIGN_STYLE: Automatic
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+schemes:
+  Tally:
+    build:
+      targets:
+        Tally: all

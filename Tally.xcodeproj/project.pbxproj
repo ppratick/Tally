@@ -1,0 +1,522 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0A0E0A3639A4CA894A0152D4 /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 096DC445A470F138D54384CF /* Views.swift */; };
+		0B514CB03CE1DDBFE24C2E47 /* HistoryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7A924B01E91C5B3508B935 /* HistoryViews.swift */; };
+		0C20BD96ABAD5D40331CD0D8 /* TallyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0CCCCECB1E61EDCE2D768A /* TallyTheme.swift */; };
+		1357DA2442A611DAF6F25356 /* TallyWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E364D292FE2D94EB30343D31 /* TallyWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		243CE7D792774C1313223FAB /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A02F197D1407A6D7109EA1 /* Models.swift */; };
+		28BF2014F5B44F63F2CD2B4D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0E91360750E6493DD7621468 /* Assets.xcassets */; };
+		323F8EA2FFEDE0D19BE105A8 /* FinanceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4A841014BA9A72ECE39915 /* FinanceModels.swift */; };
+		35BBEA0B07AD308B03814152 /* TallyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 952D829F4BE8048607324226 /* TallyApp.swift */; };
+		446D72DB8B5D450844D65ABF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0E91360750E6493DD7621468 /* Assets.xcassets */; };
+		5DF9DE19D459F63E1F6371BE /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC42AC1AE04FDA1CE08380C /* WidgetData.swift */; };
+		7858475BB43AA887391B88A1 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC90F95B515D9CA424DE3479 /* Store.swift */; };
+		934750E2E676ABF13B652E30 /* TallyWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FCFF664DA92CD14DE2BCA42 /* TallyWidget.swift */; };
+		9F2BFCD5D4CDDA004D519330 /* TallyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0CCCCECB1E61EDCE2D768A /* TallyTheme.swift */; };
+		C4929C1A11392AA68B0DDD8E /* PaymentsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2761D6EDC7F32E7A50089C22 /* PaymentsViews.swift */; };
+		D6E4C011A51B260ADE738668 /* SpendingIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82D31C9F7A54C9D6F31E1E1 /* SpendingIndex.swift */; };
+		EA9C6C7E1CC87FE54D6C1FD6 /* SpendingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F8AF60DA7A5537290BE930 /* SpendingViews.swift */; };
+		EFE2C9B16A3E3D0BE4BA9E85 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC42AC1AE04FDA1CE08380C /* WidgetData.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9B4873E0DC741EC6329E0AD7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A0B742B9D975DE83128F71C3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 24014D7F14F7F51023C763E6;
+			remoteInfo = TallyWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0B3333E30595C89D63559218 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				1357DA2442A611DAF6F25356 /* TallyWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		096DC445A470F138D54384CF /* Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views.swift; sourceTree = "<group>"; };
+		0E91360750E6493DD7621468 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1FBCC93C895D5DAAF35E7E33 /* Tally.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Tally.entitlements; sourceTree = "<group>"; };
+		25F8AF60DA7A5537290BE930 /* SpendingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingViews.swift; sourceTree = "<group>"; };
+		2761D6EDC7F32E7A50089C22 /* PaymentsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentsViews.swift; sourceTree = "<group>"; };
+		3486B6AAAF6B6543613460DD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		3FCFF664DA92CD14DE2BCA42 /* TallyWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TallyWidget.swift; sourceTree = "<group>"; };
+		4DCF1A5BC6FA366C4B658D35 /* Tally.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tally.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A4A841014BA9A72ECE39915 /* FinanceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceModels.swift; sourceTree = "<group>"; };
+		7F575993EA15D30937E5B831 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		952D829F4BE8048607324226 /* TallyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TallyApp.swift; sourceTree = "<group>"; };
+		ACC42AC1AE04FDA1CE08380C /* WidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
+		BA0CDA93068626DAD82BD8BE /* TallyWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TallyWidget.entitlements; sourceTree = "<group>"; };
+		C3A02F197D1407A6D7109EA1 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		CC90F95B515D9CA424DE3479 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		DA7A924B01E91C5B3508B935 /* HistoryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViews.swift; sourceTree = "<group>"; };
+		E364D292FE2D94EB30343D31 /* TallyWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = TallyWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		EA0CCCCECB1E61EDCE2D768A /* TallyTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TallyTheme.swift; sourceTree = "<group>"; };
+		F82D31C9F7A54C9D6F31E1E1 /* SpendingIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingIndex.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1DC466AB5A67F22D9C7BACFB /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				EA0CCCCECB1E61EDCE2D768A /* TallyTheme.swift */,
+				ACC42AC1AE04FDA1CE08380C /* WidgetData.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		348B4F4D2D668A24A52066A9 /* TallyWidget */ = {
+			isa = PBXGroup;
+			children = (
+				3486B6AAAF6B6543613460DD /* Info.plist */,
+				BA0CDA93068626DAD82BD8BE /* TallyWidget.entitlements */,
+				3FCFF664DA92CD14DE2BCA42 /* TallyWidget.swift */,
+			);
+			path = TallyWidget;
+			sourceTree = "<group>";
+		};
+		4F8EC9F444C4FB48A05B004D /* Tally */ = {
+			isa = PBXGroup;
+			children = (
+				0E91360750E6493DD7621468 /* Assets.xcassets */,
+				6A4A841014BA9A72ECE39915 /* FinanceModels.swift */,
+				DA7A924B01E91C5B3508B935 /* HistoryViews.swift */,
+				7F575993EA15D30937E5B831 /* Info.plist */,
+				C3A02F197D1407A6D7109EA1 /* Models.swift */,
+				2761D6EDC7F32E7A50089C22 /* PaymentsViews.swift */,
+				F82D31C9F7A54C9D6F31E1E1 /* SpendingIndex.swift */,
+				25F8AF60DA7A5537290BE930 /* SpendingViews.swift */,
+				CC90F95B515D9CA424DE3479 /* Store.swift */,
+				1FBCC93C895D5DAAF35E7E33 /* Tally.entitlements */,
+				952D829F4BE8048607324226 /* TallyApp.swift */,
+				096DC445A470F138D54384CF /* Views.swift */,
+			);
+			path = Tally;
+			sourceTree = "<group>";
+		};
+		519AF95473A55A971C76D7FC = {
+			isa = PBXGroup;
+			children = (
+				1DC466AB5A67F22D9C7BACFB /* Shared */,
+				4F8EC9F444C4FB48A05B004D /* Tally */,
+				348B4F4D2D668A24A52066A9 /* TallyWidget */,
+				C75C7E2A36C05412BA7D5036 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C75C7E2A36C05412BA7D5036 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4DCF1A5BC6FA366C4B658D35 /* Tally.app */,
+				E364D292FE2D94EB30343D31 /* TallyWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		24014D7F14F7F51023C763E6 /* TallyWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0529DAA9FE054D66CC69FFA9 /* Build configuration list for PBXNativeTarget "TallyWidget" */;
+			buildPhases = (
+				C7FBCFC8C67A908E77959F52 /* Sources */,
+				0C64A84C6E41D05116E62A55 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TallyWidget;
+			packageProductDependencies = (
+			);
+			productName = TallyWidget;
+			productReference = E364D292FE2D94EB30343D31 /* TallyWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		A9C692CEE4C99A9267A1F79D /* Tally */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1CE06C52A241371D16CFAE3B /* Build configuration list for PBXNativeTarget "Tally" */;
+			buildPhases = (
+				CACE146F76E8632C4560C232 /* Sources */,
+				94E81F7D0BB35613A931FAA0 /* Resources */,
+				0B3333E30595C89D63559218 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2E3C8ECC0035F2E84BA27706 /* PBXTargetDependency */,
+			);
+			name = Tally;
+			packageProductDependencies = (
+			);
+			productName = Tally;
+			productReference = 4DCF1A5BC6FA366C4B658D35 /* Tally.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A0B742B9D975DE83128F71C3 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					24014D7F14F7F51023C763E6 = {
+						ProvisioningStyle = Automatic;
+					};
+					A9C692CEE4C99A9267A1F79D = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 5C367879F862A4ED5849A1D0 /* Build configuration list for PBXProject "Tally" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 519AF95473A55A971C76D7FC;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C75C7E2A36C05412BA7D5036 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A9C692CEE4C99A9267A1F79D /* Tally */,
+				24014D7F14F7F51023C763E6 /* TallyWidget */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0C64A84C6E41D05116E62A55 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				28BF2014F5B44F63F2CD2B4D /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		94E81F7D0BB35613A931FAA0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				446D72DB8B5D450844D65ABF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C7FBCFC8C67A908E77959F52 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0C20BD96ABAD5D40331CD0D8 /* TallyTheme.swift in Sources */,
+				934750E2E676ABF13B652E30 /* TallyWidget.swift in Sources */,
+				EFE2C9B16A3E3D0BE4BA9E85 /* WidgetData.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CACE146F76E8632C4560C232 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				323F8EA2FFEDE0D19BE105A8 /* FinanceModels.swift in Sources */,
+				0B514CB03CE1DDBFE24C2E47 /* HistoryViews.swift in Sources */,
+				243CE7D792774C1313223FAB /* Models.swift in Sources */,
+				C4929C1A11392AA68B0DDD8E /* PaymentsViews.swift in Sources */,
+				D6E4C011A51B260ADE738668 /* SpendingIndex.swift in Sources */,
+				EA9C6C7E1CC87FE54D6C1FD6 /* SpendingViews.swift in Sources */,
+				7858475BB43AA887391B88A1 /* Store.swift in Sources */,
+				35BBEA0B07AD308B03814152 /* TallyApp.swift in Sources */,
+				9F2BFCD5D4CDDA004D519330 /* TallyTheme.swift in Sources */,
+				0A0E0A3639A4CA894A0152D4 /* Views.swift in Sources */,
+				5DF9DE19D459F63E1F6371BE /* WidgetData.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2E3C8ECC0035F2E84BA27706 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 24014D7F14F7F51023C763E6 /* TallyWidget */;
+			targetProxy = 9B4873E0DC741EC6329E0AD7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		12101AA6E08B336BDA2AE4A0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Tally;
+				INFOPLIST_KEY_TallyKeychainGroup = "$(AppIdentifierPrefix)com.pratick.Tally.shared";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pratick.Tally;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		41259AA067720A8B37E01F95 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Tally/Tally.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = Tally/Info.plist;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Unlock your private financial dashboard.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		651B1873036016CC33E2C922 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TallyWidget/TallyWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = TallyWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.pratick.Tally.Widget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		73CE873162472AEEF0DA4AE8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Tally;
+				INFOPLIST_KEY_TallyKeychainGroup = "$(AppIdentifierPrefix)com.pratick.Tally.shared";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pratick.Tally;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		87263450902305D55DB4429C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TallyWidget/TallyWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = TallyWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.pratick.Tally.Widget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B9A9BFD63A5662C04782A0CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Tally/Tally.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = Tally/Info.plist;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Unlock your private financial dashboard.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0529DAA9FE054D66CC69FFA9 /* Build configuration list for PBXNativeTarget "TallyWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				651B1873036016CC33E2C922 /* Debug */,
+				87263450902305D55DB4429C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1CE06C52A241371D16CFAE3B /* Build configuration list for PBXNativeTarget "Tally" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B9A9BFD63A5662C04782A0CD /* Debug */,
+				41259AA067720A8B37E01F95 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5C367879F862A4ED5849A1D0 /* Build configuration list for PBXProject "Tally" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				12101AA6E08B336BDA2AE4A0 /* Debug */,
+				73CE873162472AEEF0DA4AE8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A0B742B9D975DE83128F71C3 /* Project object */;
+}

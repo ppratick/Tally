@@ -1,0 +1,55 @@
+CREATE TABLE IF NOT EXISTS snapshots (
+  id TEXT PRIMARY KEY,
+  data TEXT NOT NULL DEFAULT '{}',
+  lease TEXT,
+  lease_until INTEGER NOT NULL DEFAULT 0
+);
+
+-- Credentials are encrypted with a Worker secret; disconnecting retains the financial snapshots.
+CREATE TABLE IF NOT EXISTS connections (
+  item_id TEXT PRIMARY KEY,
+  institution_id TEXT NOT NULL,
+  token_encrypted TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  disconnected_at TEXT
+);
+CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS balance_history (
+  account_id TEXT NOT NULL,
+  day TEXT NOT NULL,
+  bank_id TEXT NOT NULL,
+  observed_at TEXT NOT NULL,
+  current REAL,
+  available REAL,
+  pending REAL NOT NULL,
+  currency TEXT NOT NULL,
+  PRIMARY KEY (account_id, day)
+);
+CREATE TABLE IF NOT EXISTS link_sessions (
+  id TEXT PRIMARY KEY,
+  token_hash TEXT NOT NULL UNIQUE,
+  payload_encrypted TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  message TEXT,
+  lease_until INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS processed_public_tokens (
+  hash TEXT PRIMARY KEY,
+  item_id TEXT NOT NULL,
+  processed_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS transactions (
+  id TEXT PRIMARY KEY,
+  bank_id TEXT NOT NULL,
+  account_id TEXT NOT NULL,
+  data TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS transactions_bank ON transactions(bank_id);
+
+CREATE TABLE IF NOT EXISTS bank_insights (bank_id TEXT PRIMARY KEY, data TEXT NOT NULL);
+
+CREATE TABLE IF NOT EXISTS relink_jobs (session_id TEXT PRIMARY KEY, old_bank_id TEXT NOT NULL, new_bank_id TEXT, status TEXT NOT NULL DEFAULT 'pending');
+CREATE TABLE IF NOT EXISTS account_mappings (bank_id TEXT NOT NULL, source_id TEXT NOT NULL, canonical_id TEXT NOT NULL, PRIMARY KEY(bank_id,source_id));
