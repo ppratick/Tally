@@ -83,7 +83,6 @@ struct BalanceHistoryView: View {
         }
         .background(Color.tallyCanvas).navigationTitle(embedded ? "Insights" : "Balance history").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { RefreshButton() } }
-        .refreshable { await store.refreshManually() }
         .onChange(of: range) { _, _ in selectedDate = nil }
         .onChange(of: selectedAccount) { _, _ in selectedDate = nil }
     }

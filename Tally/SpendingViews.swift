@@ -139,7 +139,6 @@ struct MonthlySpendingView: View {
             }.padding(20)
         }.background(Color.tallyCanvas).navigationTitle("Insights").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { RefreshButton() } }
-        .refreshable { await store.refreshManually() }
     }
 }
 private struct SpendingTransactionsView: View {

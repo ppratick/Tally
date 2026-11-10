@@ -99,8 +99,12 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 overview
+                if let refreshed = store.lastFullRefreshAt {
+                    Text("Last refreshed \(refreshed, style: .relative) ago")
+                        .font(.caption).foregroundStyle(.secondary).padding(.top, -12)
+                }
                 if store.error != nil || store.busy || store.isOffline || store.dashboard.banks.contains(where: { $0.error != nil }) {
-                    StatusBanner(showsSyncTime: false)
+                    StatusBanner()
                 }
                 if accounts.isEmpty {
                     ContentUnavailableView("Your accounts are on their way", systemImage: "creditcard", description: Text("Refresh to load your connected accounts."))
@@ -131,7 +135,6 @@ struct HomeView: View {
             ToolbarItem(placement: .topBarTrailing) { Button { showSettings = true } label: { Image(systemName: "gearshape") }.accessibilityLabel("Settings") }
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
-        .refreshable { await store.refreshManually() }
     }
     private var overview: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -162,7 +165,6 @@ struct HomeView: View {
 }
 struct StatusBanner: View {
     @Environment(TallyStore.self) private var store
-    var showsSyncTime = true
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let error = store.error {
@@ -176,11 +178,6 @@ struct StatusBanner: View {
                 HStack(spacing: 7) { ProgressView().controlSize(.mini); Text("Refreshing your accounts…") }.font(.caption).foregroundStyle(.secondary)
             } else if store.isOffline {
                 Label("Offline · showing saved data", systemImage: "wifi.slash").font(.caption).foregroundStyle(.secondary)
-            } else if showsSyncTime, let saved = store.savedAt {
-                HStack(spacing: 6) {
-                    Circle().fill(Color.tallyAccent).frame(width: 5, height: 5)
-                    Text("Synced \(saved, style: .relative) ago").font(.caption).foregroundStyle(.secondary)
-                }
             }
             if store.dashboard.banks.contains(where: { $0.error != nil }) {
                 Label("A bank needs attention in Accounts", systemImage: "exclamationmark.circle").font(.caption).foregroundStyle(.orange)
@@ -364,7 +361,6 @@ struct TransactionsView: View {
         .navigationTitle("Transactions").navigationBarTitleDisplayMode(lockedAccountID == nil ? .large : .inline)
         .searchable(text: $search, prompt: "Search transactions")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { RefreshButton() } }
-        .refreshable { await store.refreshManually() }
     }
     @ViewBuilder private var accountControl: some View {
         if lockedAccountID != nil {
@@ -474,7 +470,7 @@ struct AccountsView: View {
                     VStack(spacing: 0) {
                         Button { management = account } label: { ManagementAccountRow(account: account) }
                             .buttonStyle(.plain).disabled(editMode.isEditing)
-                        if let bank = store.dashboard.banks.first(where: { $0.id == account.bankID }) {
+                        if let bank = store.dashboard.banks.first(where: { $0.id == account.bankID }), bank.needsAttention {
                             Divider().padding(.horizontal, 18)
                             ConnectionStatus(bank: bank).padding(18)
                         }
@@ -523,7 +519,6 @@ struct AccountsView: View {
         .confirmationDialog("Connect another bank", isPresented: $addBank, titleVisibility: .visible) {
             Button("Continue with Plaid") { Task { await store.startAddingBank() } }
         } message: { Text("Choose a new bank or login. To change accounts at an already-connected bank, use its connection settings. A new connection uses a Plaid trial slot.") }
-        .refreshable { await store.refreshManually() }
     }
 }
 private struct ManagementAccountRow: View {
@@ -598,14 +593,6 @@ private struct ConnectionStatus: View {
             if bank.error != nil || !bank.importComplete || bank.syncPending == true {
                 Label(bank.statusText, systemImage: bank.error == nil ? "clock" : "exclamationmark.circle").foregroundStyle(.orange)
             }
-            if let date = bank.updateDate {
-                HStack { Text("Transactions"); Spacer(); Text(date, style: .relative); Text("ago") }.foregroundStyle(.secondary)
-            } else if let date = bank.checkDate {
-                HStack { Text("Connection checked"); Spacer(); Text(date, style: .relative); Text("ago") }.foregroundStyle(.secondary)
-            }
-            if let date = bank.balanceDate {
-                HStack { Text("Balances refreshed"); Spacer(); Text(date, style: .relative); Text("ago") }.foregroundStyle(.secondary)
-            }
             if bank.error == "ITEM_LOGIN_REQUIRED" || bank.error == "PENDING_EXPIRATION" {
                 Button("Reconnect securely") { Task { await store.reconnect(bank) } }.disabled(store.busy).padding(.top, 3)
             } else if bank.error != nil || !bank.importComplete || bank.syncPending == true {
@@ -633,7 +620,7 @@ struct AccountDetailView: View {
                             TransactionsView(accountID: account.id)
                         }
                     }
-                    if let bank = store.dashboard.banks.first(where: { $0.id == account.bankID }) {
+                    if let bank = store.dashboard.banks.first(where: { $0.id == account.bankID }), bank.needsAttention {
                         ConnectionStatus(bank: bank).padding(.horizontal, 4)
                     }
                 } else {
@@ -643,7 +630,6 @@ struct AccountDetailView: View {
         }
         .background(Color.tallyCanvas).navigationTitle(account?.shortBank ?? "Account").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { RefreshButton() } }
-        .refreshable { await store.refreshManually() }
     }
     private func hero(_ account: BankAccount) -> some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -721,15 +707,19 @@ struct SettingsView: View {
                     Text("Optional Face ID or passcode protection.").font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Data") {
-                    Button { Task { await store.refreshManually() } } label: { Label("Refresh accounts", systemImage: "arrow.clockwise") }.disabled(store.busy)
+                    Picker("Automatic refresh", selection: Binding(get: { store.automaticRefreshMinutes }, set: { store.automaticRefreshMinutes = $0 })) {
+                        Text("15 minutes").tag(15)
+                        Text("30 minutes").tag(30)
+                        Text("1 hour").tag(60)
+                    }
                     Button("Clear saved data on this iPhone", role: .destructive) { clearCache = true }
                 }
                 Section("How updates work") {
                     VStack(alignment: .leading, spacing: 14) {
-                        Label("Open Tally to load your latest saved bank data.", systemImage: "iphone")
-                        Label("Pull down or tap Refresh for live balances and the latest available transactions.", systemImage: "arrow.clockwise")
+                        Label("Opening or returning to Tally refreshes your banks when the selected interval has passed. Saved data appears immediately.", systemImage: "iphone")
+                        Label("Tap Refresh to check for fresh transactions and live balances at any time.", systemImage: "arrow.clockwise")
                     }.font(.subheadline).padding(.vertical, 5)
-                    Text("Banks release transaction updates on their own schedule, usually 1–4 times daily.").font(.caption).foregroundStyle(.secondary)
+                    Text("New purchases may take time to become available through your bank. Updates also arrive automatically when Plaid reports new activity.").font(.caption).foregroundStyle(.secondary)
                 }
                 Section {
                     DisclosureGroup("Server connection") {

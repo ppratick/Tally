@@ -1,5 +1,27 @@
 import Foundation
 
+enum RefreshPolicy {
+    static let intervals = [15, 30, 60]
+    static func interval(_ minutes: Int) -> Int { intervals.contains(minutes) ? minutes : 30 }
+    static func isDue(lastSuccess: Date?, pendingSince: Date?, minutes: Int, now: Date = .now) -> Bool {
+        if let pendingSince, (0..<180).contains(now.timeIntervalSince(pendingSince)) { return false }
+        guard let lastSuccess else { return true }
+        let age = now.timeIntervalSince(lastSuccess)
+        return age < 0 || age >= Double(interval(minutes) * 60)
+    }
+    static func completedAt(banks: [BankConnection], since start: Date) -> Date? {
+        let active = banks.filter { $0.archived != true }
+        guard !active.isEmpty else { return nil }
+        var dates: [Date] = []
+        for bank in active {
+            guard bank.error == nil, let checked = bank.checkDate, checked >= start,
+                  let balance = bank.balanceDate, balance >= start else { return nil }
+            dates.append(checked)
+        }
+        return dates.max()
+    }
+}
+
 struct BankAccount: Codable, Identifiable, Hashable {
     let id: String
     let bankID: String
@@ -71,6 +93,7 @@ struct BankConnection: Codable, Identifiable {
     var updateDate: Date? { parseBankDate(updatedAt) }
     var balanceDate: Date? { parseBankDate(balanceUpdatedAt) }
     var checkDate: Date? { parseBankDate(checkedAt) }
+    var needsAttention: Bool { error != nil || !importComplete || syncPending == true }
     var statusText: String {
         switch error {
         case "ITEM_LOGIN_REQUIRED", "PENDING_EXPIRATION": return "Sign in again to reconnect this bank."

@@ -183,8 +183,17 @@ export default {
         const gate=await env.DB.prepare("INSERT INTO snapshots(id,lease_until) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET lease_until=excluded.lease_until WHERE lease_until<?")
           .bind('_request_gate:'+bank.item_id,Date.now()+30000,Date.now()).run();
         if(!gate.meta.changes)return json({error:'Please wait a moment before refreshing again.'},429);
+        let refreshFailed=false;
+        // Explicit live refresh only: automatic syncs and webhook deliveries must never trigger another bank refresh.
+        // Enabled for our verified free Trial plan; disable before switching to paid Plaid pricing.
+        if(bankRefresh[2]==='balances'&&env.TRANSACTIONS_REFRESH_ENABLED==='true') {
+          try {await plaid(env,'/transactions/refresh',{access_token:bank.access_token});}
+          catch {refreshFailed=true;}
+        }
+        // Queue after the fresh-data request so a timer cannot finish this manual sync using older data.
         const id=await enqueueJob(env,'bank',bank.item_id,{live:bankRefresh[2]==='balances'});
         const completed=await runJob(env,id,job=>executeJob(env,job));
+        if(refreshFailed)return json({error:'Balances were checked, but a fresh transaction update could not be requested. Try again shortly.'},503);
         return json({received:true,completed});
       }
       if(['/v1/sync','/v1/balances'].includes(path)&&request.method==='POST') {

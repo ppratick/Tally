@@ -3,6 +3,7 @@ export interface Env {
   DB: D1Database; PLAID_CLIENT_ID: string; PLAID_SECRET: string; PLAID_ENV: string;
   PLAID_ITEMS: string; APP_TOKEN: string; TOKEN_ENCRYPTION_KEY: string;
   WIDGET_TOKEN: string; PUBLIC_URL: string; HISTORY_TIME_ZONE?: string;
+  TRANSACTIONS_REFRESH_ENABLED?: string;
 }
 export class PlaidError extends Error {
   constructor(public code: string, public requestID?: string) { super(code); }

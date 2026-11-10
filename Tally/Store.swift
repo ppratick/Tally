@@ -60,12 +60,23 @@ enum AppError: LocalizedError {
     private var browserIsAdding = false
     var useFaceID: Bool { didSet { UserDefaults.standard.set(useFaceID, forKey: "useFaceID") } }
     var configured: Bool { settings != nil }
-    private var lastManualRefresh: Date?
+    var automaticRefreshMinutes: Int {
+        didSet { UserDefaults.standard.set(automaticRefreshMinutes, forKey: "automaticRefreshMinutes") }
+    }
+    var lastFullRefreshAt: Date? {
+        didSet { UserDefaults.standard.set(lastFullRefreshAt, forKey: "lastFullRefreshAt") }
+    }
+    private var pendingFullRefreshAt: Date? {
+        didSet { UserDefaults.standard.set(pendingFullRefreshAt, forKey: "pendingFullRefreshAt") }
+    }
     private let session: URLSession
     private var cacheURL: URL { URL.documentsDirectory.appending(path: "dashboard.json") }
     init() {
         // Apply the owner's request once for existing installations, then retain optional future choices.
         let preferences = UserDefaults.standard
+        automaticRefreshMinutes = RefreshPolicy.interval(preferences.integer(forKey: "automaticRefreshMinutes"))
+        lastFullRefreshAt = preferences.object(forKey: "lastFullRefreshAt") as? Date
+        pendingFullRefreshAt = preferences.object(forKey: "pendingFullRefreshAt") as? Date
         if !preferences.bool(forKey: "optionalLockMigration") {
             preferences.set(false, forKey: "useFaceID")
             preferences.set(true, forKey: "optionalLockMigration")
@@ -100,10 +111,14 @@ enum AppError: LocalizedError {
         }
         unlocked = true
         loadCache()
-        if configured { await refresh() }
+        if configured { await refreshOnOpen() }
     }
     func becameActive() async {
-        if unlocked && configured && !authenticating { await refresh() }
+        if unlocked && configured && !authenticating { await refreshOnOpen() }
+    }
+    private func refreshOnOpen() async {
+        let due = RefreshPolicy.isDue(lastSuccess: lastFullRefreshAt, pendingSince: pendingFullRefreshAt, minutes: automaticRefreshMinutes)
+        await refresh(path: due ? "/v1/balances" : "/v1/dashboard")
     }
     func lock() { if useFaceID { unlocked = false; dashboard = Dashboard() } }
     func loadCache() {
@@ -120,8 +135,9 @@ enum AppError: LocalizedError {
         do {
             let result: Dashboard = try await request("/v1/dashboard", settings: value)
             try Vault.save(value); settings = value; dashboard = result
+            lastFullRefreshAt = nil; pendingFullRefreshAt = nil
             try? FileManager.default.removeItem(at: cacheURL)
-            await refresh(path: "/v1/sync")
+            await refresh(path: "/v1/balances")
             return true
         } catch { self.error = error.localizedDescription; return false }
     }
@@ -132,17 +148,28 @@ enum AppError: LocalizedError {
         do {
             let result: Dashboard
             if path == "/v1/balances" || path == "/v1/sync" {
+                let started = Date.now
                 let current: Dashboard = try await request("/v1/dashboard", settings: settings)
-                struct Receipt: Decodable { let received: Bool }
+                struct Receipt: Decodable { let received: Bool; let completed: Bool }
                 var firstFailure: Error?
+                var allCompleted = !current.banks.filter({ $0.archived != true }).isEmpty
                 for bank in current.banks.filter({ $0.archived != true }) {
                     do {
-                        let _: Receipt = try await request("/v1/banks/\(bank.id)/\(path == "/v1/balances" ? "balances" : "sync")", method: "POST", settings: settings)
+                        let receipt: Receipt = try await request("/v1/banks/\(bank.id)/\(path == "/v1/balances" ? "balances" : "sync")", method: "POST", settings: settings)
+                        allCompleted = allCompleted && receipt.received && receipt.completed
                     } catch { if firstFailure == nil { firstFailure = error } }
                 }
                 result = try await request("/v1/dashboard", settings: settings)
                 if let firstFailure { error = firstFailure.localizedDescription }
+                if path == "/v1/balances" {
+                    if firstFailure == nil && allCompleted {
+                        lastFullRefreshAt = .now; pendingFullRefreshAt = nil
+                    } else { pendingFullRefreshAt = firstFailure == nil ? started : nil }
+                }
             } else { result = try await request(path, settings: settings) }
+            if let started = pendingFullRefreshAt, let completed = RefreshPolicy.completedAt(banks: result.banks, since: started) {
+                lastFullRefreshAt = completed; pendingFullRefreshAt = nil
+            }
             dashboard = result; isOffline = false; savedAt = .now
             pendingLinkSessionID = result.pendingLinkID
             UserDefaults.standard.set(pendingLinkSessionID, forKey: "pendingLinkSessionID")
@@ -152,15 +179,7 @@ enum AppError: LocalizedError {
         } catch { self.error = error.localizedDescription; isOffline = true }
     }
     func refreshManually() async {
-        guard !busy else { return }
-        // Repeated gestures share the server snapshot rather than hitting bank rate limits.
-        if let lastManualRefresh, Date.now.timeIntervalSince(lastManualRefresh) < 30 {
-            await refresh()
-            return
-        }
-        lastManualRefresh = .now
         await refresh(path: "/v1/balances")
-        if error != nil { lastManualRefresh = nil }
     }
     func reconnect(_ bank: BankConnection) async {
         guard let settings, !busy else { return }
