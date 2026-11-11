@@ -10,6 +10,7 @@ private struct TimelineCallback: @unchecked Sendable {
     let call: (Timeline<TallyEntry>) -> Void
 }
 struct TallyProvider: TimelineProvider, Sendable {
+    private static let session = AuthenticatedSession.make(requestTimeout: 20, resourceTimeout: 30)
     func placeholder(in context: Context) -> TallyEntry { TallyEntry(date: .now, snapshot: nil) }
     func getSnapshot(in context: Context, completion: @escaping (TallyEntry) -> Void) {
         completion(TallyEntry(date: .now, snapshot: WidgetStorage.read("snapshot", as: WidgetSnapshot.self)))
@@ -24,7 +25,7 @@ struct TallyProvider: TimelineProvider, Sendable {
                     var request = URLRequest(url: url); request.timeoutInterval = 20
                     request.setValue("Bearer \(configuration.token)", forHTTPHeaderField: "Authorization")
                     request.setValue("TallyWidget/1.0", forHTTPHeaderField: "User-Agent")
-                    let (data, response) = try await URLSession.shared.data(for: request)
+                    let (data, response) = try await Self.session.data(for: request)
                     if (response as? HTTPURLResponse)?.statusCode == 200 {
                         let value = try JSONDecoder().decode(WidgetSnapshot.self, from: data)
                         snapshot = configuration.applying(to: value)

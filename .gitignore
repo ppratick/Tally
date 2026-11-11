@@ -16,6 +16,7 @@ backend-secrets.json
 relink-backup.json
 relink-sessions.json
 dashboard.json
+chat.json
 *.p8
 *.p12
 *.key

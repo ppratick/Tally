@@ -28,6 +28,8 @@ targets:
       path: Tally/Info.plist
       properties:
         CFBundleDisplayName: Tally
+        NSMicrophoneUsageDescription: Use the microphone to dictate questions to Ask Tally.
+        NSSpeechRecognitionUsageDescription: Transcribe your spoken questions. Speech may be processed by Apple when on-device recognition is unavailable.
         TallyKeychainGroup: '$(AppIdentifierPrefix)com.pratick.Tally.shared'
         CFBundleURLTypes:
           - CFBundleURLName: com.pratick.Tally

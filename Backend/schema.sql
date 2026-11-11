@@ -54,6 +54,33 @@ CREATE TABLE IF NOT EXISTS bank_insights (bank_id TEXT PRIMARY KEY, data TEXT NO
 CREATE TABLE IF NOT EXISTS relink_jobs (session_id TEXT PRIMARY KEY, old_bank_id TEXT NOT NULL, new_bank_id TEXT, status TEXT NOT NULL DEFAULT 'pending');
 CREATE TABLE IF NOT EXISTS account_mappings (bank_id TEXT NOT NULL, source_id TEXT NOT NULL, canonical_id TEXT NOT NULL, PRIMARY KEY(bank_id,source_id));
 
+CREATE TABLE IF NOT EXISTS chat_sessions (
+  id TEXT PRIMARY KEY,
+  data TEXT NOT NULL DEFAULT '[]',
+  updated_at INTEGER NOT NULL,
+  lease TEXT,
+  lease_until INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS chat_sessions_updated ON chat_sessions(updated_at);
+
+-- Usage metadata only: no prompts, financial data, API keys, or response text.
+-- Independent of chat_sessions so clearing/expiring a chat preserves usage totals.
+CREATE TABLE IF NOT EXISTS ai_usage (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL,
+  request_id TEXT NOT NULL,
+  call_number INTEGER NOT NULL,
+  model TEXT NOT NULL,
+  started_at TEXT NOT NULL,
+  finished_at TEXT,
+  status TEXT NOT NULL DEFAULT 'started' CHECK(status IN ('started','completed','failed')),
+  http_status INTEGER,
+  input_tokens INTEGER,
+  output_tokens INTEGER
+);
+CREATE INDEX IF NOT EXISTS ai_usage_started ON ai_usage(started_at);
+CREATE INDEX IF NOT EXISTS ai_usage_request ON ai_usage(conversation_id,request_id);
+
 CREATE TABLE IF NOT EXISTS sync_jobs (
   id TEXT PRIMARY KEY, kind TEXT NOT NULL, subject TEXT NOT NULL,
   revision INTEGER NOT NULL DEFAULT 1, attempts INTEGER NOT NULL DEFAULT 0,

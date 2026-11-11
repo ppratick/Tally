@@ -31,6 +31,10 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Use the microphone to dictate questions to Ask Tally.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Transcribe your spoken questions. Speech may be processed by Apple when on-device recognition is unavailable.</string>
 	<key>TallyKeychainGroup</key>
 	<string>$(AppIdentifierPrefix)com.pratick.Tally.shared</string>
 	<key>UILaunchScreen</key>

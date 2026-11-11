@@ -1,6 +1,7 @@
 import { encrypt, decrypt, type Bank, type Env } from './plaid';
-import type { Snapshot } from './model';
+import type { Snapshot, BalanceObservation } from './model';
 interface ConnectionRow { item_id:string; institution_id:string; token_encrypted:string|null; active:number }
+export type ConnectionMetadata = Pick<Bank,'item_id'|'institution_id'|'active'>;
 const historyDayFormatters=new Map([['America/New_York',new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'})]]);
 // Initialize the default formatter once at Worker startup instead of rebuilding ICU state inside every refresh.
 historyDayFormatters.get('America/New_York')!.format(new Date(0));
@@ -13,11 +14,12 @@ export async function initializeConnections(env:Env):Promise<void> {
   }
   await env.DB.prepare("INSERT OR IGNORE INTO app_settings(key,value) VALUES('connections_initialized','1')").run();
 }
-export async function banks(env:Env,includeArchived=false):Promise<Bank[]> {
+// Read-only dashboards and metadata checks never need to fetch or decrypt credentials.
+export async function connectionMetadata(env:Env,includeArchived=false):Promise<ConnectionMetadata[]> {
   await initializeConnections(env);
-  const rows=await env.DB.prepare('SELECT item_id,institution_id,token_encrypted,active FROM connections'+(includeArchived?'':' WHERE active=1')).all<ConnectionRow>();
-  return Promise.all(rows.results.map(async row=>({item_id:row.item_id,institution_id:row.institution_id,active:row.active===1,
-    access_token:row.token_encrypted?await decrypt<string>(env,row.token_encrypted):''})));
+  const rows=await env.DB.prepare('SELECT item_id,institution_id,active FROM connections'+(includeArchived?'':' WHERE active=1'))
+    .all<{item_id:string;institution_id:string;active:number}>();
+  return rows.results.map(row=>({...row,active:row.active===1}));
 }
 export async function bankByID(env:Env,id:string):Promise<Bank|undefined> {
   await initializeConnections(env);
@@ -54,7 +56,7 @@ export function historyStatements(env:Env,bank:Bank,state:Snapshot,lease:string)
     .bind(account.id,day,bank.item_id,observed,account.current,account.available,pendingAmount(state,account.id,account.currency),account.currency,bank.item_id,bank.item_id,lease));
 }
 export async function history(env:Env) {
-  const rows=await env.DB.prepare('SELECT account_id AS accountID,day,observed_at AS observedAt,current,available,pending,currency FROM balance_history ORDER BY day,account_id').all();
+  const rows=await env.DB.prepare('SELECT account_id AS accountID,day,observed_at AS observedAt,current,available,pending,currency FROM balance_history ORDER BY day,account_id').all<BalanceObservation>();
   return rows.results;
 }
 

@@ -136,6 +136,11 @@ struct MonthlySpendingView: View {
                     }.buttonStyle(.plain)
                 }
                 Text("Purchases including pending, minus refunds. Transfers and loan/card payments are excluded. USD only.").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 4)
+                NavigationLink {
+                    ChatView(context: "Monthly spending screen. Month: \(month.formatted(.iso8601.year().month())). Selected account ID: \(selectedAccount). USD spending includes pending, minus refunds, excluding transfers and card payments.", initialPrompt: "Explain my spending for \(month.formatted(.dateTime.month(.wide).year())).")
+                } label: {
+                    Label("Explain this spending", systemImage: "sparkles").font(.subheadline.weight(.medium)).frame(maxWidth: .infinity, alignment: .leading).padding(18).financeCard()
+                }.buttonStyle(.plain)
             }.padding(20)
         }.background(Color.tallyCanvas).navigationTitle("Insights").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { RefreshButton() } }

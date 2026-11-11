@@ -1,9 +1,18 @@
 import Foundation
 
+private enum BankDayParser {
+    static let formatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .autoupdatingCurrent
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.isLenient = false
+        return formatter
+    }()
+}
 func bankDay(_ value: String?) -> Date? {
     guard let value else { return nil }
-    let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"; f.isLenient = false
-    return f.date(from: value)
+    return BankDayParser.formatter.date(from: value)
 }
 struct CreditStatement: Codable, Identifiable {
     let accountID: String

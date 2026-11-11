@@ -4,6 +4,7 @@ export interface Env {
   PLAID_ITEMS: string; APP_TOKEN: string; TOKEN_ENCRYPTION_KEY: string;
   WIDGET_TOKEN: string; PUBLIC_URL: string; HISTORY_TIME_ZONE?: string;
   TRANSACTIONS_REFRESH_ENABLED?: string;
+  OPENAI_MODEL?: string; AI_DAILY_MESSAGE_LIMIT?: string;
 }
 export class PlaidError extends Error {
   constructor(public code: string, public requestID?: string) { super(code); }
@@ -12,7 +13,7 @@ export async function plaid<T>(env: Env, route: string, body: object): Promise<T
   if (!['production','sandbox'].includes(env.PLAID_ENV)) throw new Error('Invalid environment');
   for (let attempt=0; attempt<3; attempt++) {
     const response = await fetch(`https://${env.PLAID_ENV}.plaid.com${route}`, {
-      method:'POST', headers:{'Content-Type':'application/json','Plaid-Version':'2020-09-14'},
+      method:'POST', redirect:'error', headers:{'Content-Type':'application/json','Plaid-Version':'2020-09-14'},
       body:JSON.stringify({client_id:env.PLAID_CLIENT_ID,secret:env.PLAID_SECRET,...body}),signal:AbortSignal.timeout(60000)
     });
     const result=await response.json() as T & {error_code?:string;request_id?:string};

@@ -1,5 +1,5 @@
 import type { LinkTokenGetResponse, AccountsGetResponse, ItemGetResponse } from 'plaid/legacy';
-import { banks, load, saveConnection } from './repository';
+import { bankByID, connectionMetadata, load, saveConnection } from './repository';
 import { enqueueJob } from './jobs';
 import { mapReplacement } from './relink';
 import { plaid, encrypt, decrypt, digest, type Env, type Bank } from './plaid';
@@ -7,7 +7,7 @@ type Sync = (env:Env,bank:Bank,live?:boolean)=>Promise<void>;
 interface Session { id:string;payload_encrypted:string;expires_at:string;status:string;message:string|null }
 interface Payload { token:string;url:string;replacementID?:string }
 export async function startSession(env:Env,replacementID?:string) {
-  if(replacementID&&!(await banks(env)).some(b=>b.item_id===replacementID))throw new Error('Connection unavailable');
+  if(replacementID&&!(await connectionMetadata(env)).some(b=>b.item_id===replacementID))throw new Error('Connection unavailable');
   const pending=await env.DB.prepare("SELECT * FROM link_sessions WHERE status='pending' AND expires_at>? ORDER BY created_at DESC").bind(new Date().toISOString()).all<Session>();
   for(const existing of pending.results){const value=await decrypt<Payload>(env,existing.payload_encrypted);
     if(value.replacementID===replacementID)return {sessionID:existing.id,url:value.url};}
@@ -23,8 +23,8 @@ export async function startSession(env:Env,replacementID?:string) {
 }
 async function duplicateCandidate(env:Env,institutionID:string|undefined,accounts:{mask?:string|null;type?:string|null}[],excludeID?:string):Promise<boolean> {
   if(!institutionID || accounts.length===0 || accounts.some(a=>!a.mask))return false;
-  const existing=(await banks(env)).filter(b=>b.institution_id===institutionID&&b.item_id!==excludeID);
-  for(const bank of existing){const state=await load(env,bank.item_id);
+  const existing=(await connectionMetadata(env)).filter(b=>b.institution_id===institutionID&&b.item_id!==excludeID);
+  for(const bank of existing){const state=await load(env,bank.item_id,false);
     if(accounts.every(a=>state.accounts.some(old=>old.mask===a.mask&&old.type===a.type)))return true;
   }
   return false;
@@ -48,7 +48,7 @@ export async function finishSession(env:Env,id:string,sync:Sync) {
         // Detect before exchange. Exchanging a confirmed duplicate lets us remove only the newly-created Item, not the user's existing connection.
         const duplicate=await duplicateCandidate(env,result.institution?.institution_id,result.accounts||[],payload.replacementID);
         const exchanged=await plaid<{access_token:string;item_id:string}>(env,'/item/public_token/exchange',{public_token:result.public_token});
-        const alreadyStored=(await banks(env,true)).some(b=>b.item_id===exchanged.item_id);
+        const alreadyStored=(await connectionMetadata(env,true)).some(b=>b.item_id===exchanged.item_id);
         if(duplicate&&!alreadyStored) {
           await plaid(env,'/item/remove',{access_token:exchanged.access_token});duplicates++;
         }else {
@@ -57,7 +57,7 @@ export async function finishSession(env:Env,id:string,sync:Sync) {
           await saveConnection(env,bank);
           if(payload.replacementID){
             await env.DB.prepare("UPDATE relink_jobs SET new_bank_id=?,status='importing' WHERE session_id=?").bind(bank.item_id,id).run();
-            const original=(await banks(env)).find(b=>b.item_id===payload.replacementID);
+            const original=await bankByID(env,payload.replacementID);
             if(original)try{await mapReplacement(env,original,bank,id);}
             catch{
               await plaid(env,'/item/remove',{access_token:bank.access_token});

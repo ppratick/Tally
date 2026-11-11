@@ -2,7 +2,7 @@ import { decodeProtectedHeader, importJWK, jwtVerify } from 'jose';
 import type { AccountsGetResponse, TransactionsSyncResponse, Transaction, ItemGetResponse, InstitutionsGetByIdResponse } from 'plaid/legacy';
 import { applyChanges, type Account, type Entry, type Snapshot } from './model';
 import { plaid, matchesBearer, PlaidError, type Env, type Bank } from './plaid';
-import { banks, bankByID, load, history, historyStatements, pendingAmount, transactionStatements, accountMappings } from './repository';
+import { connectionMetadata, bankByID, load, history, historyStatements, pendingAmount, transactionStatements, accountMappings } from './repository';
 import { loadInsights, syncInsights } from './insights';
 import { relinkJobs, finalizeRelink } from './relink';
 import { mergeReplacementHistory } from './relink-model';
@@ -10,6 +10,8 @@ import { enqueueJob, runJob, runNextJob, failureCode, JobFailure, type SyncJob }
 import { oldestSourceTime } from './freshness';
 import { enqueueScheduledRefreshes, refreshMinutes, refreshIntervals, recordFullRefresh, fullRefreshTimes } from './schedule';
 import { startSession, finishSession, enqueueLinkByToken, pendingSessionID } from './link';
+import { chatRoute, pruneChats } from './chat';
+import { readText, BodyLimitError } from './http';
 function transaction(t: Transaction): Entry {
   return {id:t.transaction_id, accountID:t.account_id, merchant:t.merchant_name || t.original_description || t.name || 'Transaction',
     amount:t.amount,currency:t.iso_currency_code || t.unofficial_currency_code || 'USD',date:t.date,pending:t.pending,
@@ -109,8 +111,11 @@ async function executeJob(env:Env,job:SyncJob):Promise<void> {
   await syncBank(env,bank,job.live_balance===1,job.force_insights===1||job.attempts>0);
   if(job.kind==='refresh')await recordFullRefresh(env,bank.item_id);
 }
-async function dashboard(env:Env) {
-  const entries=await Promise.all((await banks(env,true)).map(async bank=>({id:bank.item_id,active:bank.active,...await load(env,bank.item_id),insights:await loadInsights(env,bank.item_id)})));
+export async function dashboard(env:Env) {
+  const entries=await Promise.all((await connectionMetadata(env,true)).map(async bank=>{
+    const [state,insights]=await Promise.all([load(env,bank.item_id),loadInsights(env,bank.item_id)]);
+    return {id:bank.item_id,active:bank.active,...state,insights};
+  }));
   const jobs=await relinkJobs(env);
   for(const job of jobs.filter(j=>j.status==='complete')){
     const next=entries.find(e=>e.id===job.new_bank_id),previous=entries.find(e=>e.id===job.old_bank_id);
@@ -132,7 +137,7 @@ async function dashboard(env:Env) {
 async function widgetSnapshot(env:Env) {
   const jobs=await relinkJobs(env);
   const hidden=new Set(jobs.filter(j=>j.status!=='complete').map(j=>j.new_bank_id));
-  const connections=(await banks(env)).filter(b=>!hidden.has(b.item_id));
+  const connections=(await connectionMetadata(env)).filter(b=>!hidden.has(b.item_id));
   const accounts=[];
   for(const bank of connections) {
     const state=await load(env,bank.item_id,false);
@@ -160,14 +165,15 @@ export default {
   async scheduled(_controller:ScheduledController,env:Env):Promise<void> {
     await enqueueScheduledRefreshes(env);
     await runNextJob(env,job=>executeJob(env,job));
+    await pruneChats(env);
   },
   async fetch(request:Request,env:Env,_ctx:ExecutionContext):Promise<Response> {
     const path=new URL(request.url).pathname;
     if(path==='/v1/widget'&&request.method==='GET'){if(!await matchesBearer(request,env.WIDGET_TOKEN))return json({error:'Unauthorized'},401);return json(await widgetSnapshot(env));}
     if(path==='/health' && request.method==='GET')return json({status:'ok',service:'Tally'});
     if(path==='/webhooks/plaid' && request.method==='POST') {
-      if(Number(request.headers.get('Content-Length') || 0)>65536)return json({error:'Too large'},413);
-      const raw=await request.text();if(raw.length>65536)return json({error:'Too large'},413);
+      let raw:string;
+      try{raw=await readText(request,65536);}catch(error){return json({error:error instanceof BodyLimitError?'Too large':'Invalid request body'},error instanceof BodyLimitError?413:400);}
       try {await verifyWebhook(request,env,raw);}catch{return json({error:'Invalid signature'},401);}
       try {
         const event=JSON.parse(raw);
@@ -182,8 +188,9 @@ export default {
     }
     if(!await matchesBearer(request,env.APP_TOKEN))return json({error:'Unauthorized'},401);
     try {
+      if(path==='/v1/chat'||path.startsWith('/v1/chat/'))return await chatRoute(request,env,()=>dashboard(env));
       if(path==='/v1/settings'&&request.method==='PUT') {
-        const raw=await request.text();if(raw.length>1024)return json({error:'Too large'},413);
+        const raw=await readText(request,1024);
         let body;try{body=JSON.parse(raw);}catch{return json({error:'Invalid settings'},400);}
         if(!body||!refreshIntervals.includes(body.automaticRefreshMinutes))return json({error:'Choose 15, 30, or 60 minutes'},400);
         await env.DB.prepare("INSERT INTO app_settings(key,value) VALUES('automatic_refresh_minutes',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value")
@@ -196,7 +203,7 @@ export default {
       if(path.startsWith('/v1/link/')&&path.endsWith('/complete')&&request.method==='POST'){const id=path.split('/')[3];return json(await finishSession(env,id,queueBank));}
       if(path.startsWith('/v1/link/')&&path.endsWith('/cancel')&&request.method==='POST'){const id=path.split('/')[3];const result=await finishSession(env,id,queueBank);if(result.status==='pending')await env.DB.prepare("UPDATE link_sessions SET status='cancelled' WHERE id=?").bind(id).run();return json({status:result.status==='pending'?'cancelled':result.status,message:result.message});}
       if(path.startsWith('/v1/connections/')&&request.method==='DELETE'){
-        const id=path.split('/').pop();const bank=(await banks(env)).find(b=>b.item_id===id);
+        const id=path.split('/').pop()!;const bank=await bankByID(env,id);
         if(!bank)return json({error:'Connection not found'},404);
         try{await plaid(env,'/item/remove',{access_token:bank.access_token});}catch(e){if(!(e instanceof PlaidError&&e.code==='ITEM_NOT_FOUND'))throw e;}
         await env.DB.prepare('UPDATE connections SET active=0,token_encrypted=NULL,disconnected_at=? WHERE item_id=?').bind(new Date().toISOString(),id).run();
@@ -216,15 +223,15 @@ export default {
         return json({received:true,completed});
       }
       if(['/v1/sync','/v1/balances'].includes(path)&&request.method==='POST') {
-        for(const bank of await banks(env))await enqueueJob(env,'bank',bank.item_id,{live:path==='/v1/balances'});
+        for(const bank of await connectionMetadata(env))await enqueueJob(env,'bank',bank.item_id,{live:path==='/v1/balances'});
         return json(await dashboard(env));
       }
       if(path.startsWith('/v1/reconnect/') && request.method==='POST') {
-        const bank=(await banks(env)).find(b=>b.item_id===path.split('/').pop());if(!bank)return json({error:'Unknown bank'},404);
+        const bank=await bankByID(env,path.split('/').pop()!);if(!bank)return json({error:'Unknown bank'},404);
         const result=await plaid<{hosted_link_url:string}>(env,'/link/token/create',{user:{client_user_id:'tally-owner'},client_name:'Tally',country_codes:['US'],language:'en',access_token:bank.access_token,products:[],additional_consented_products:['liabilities'],update:{account_selection_enabled:true},hosted_link:{completion_redirect_uri:'tally://link-complete'}});
         return json({url:result.hosted_link_url});
       }
       return json({error:'Not found'},404);
-    }catch {return json({error:'Unable to complete the request. Try again shortly.'},503);}
+    }catch(error) {return error instanceof BodyLimitError?json({error:'Too large'},413):json({error:'Unable to complete the request. Try again shortly.'},503);}
   }
 };

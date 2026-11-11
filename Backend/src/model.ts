@@ -6,6 +6,9 @@ export interface Entry {
   id: string; accountID: string; merchant: string; amount: number; currency: string;
   date: string; pending: boolean; category: string; pendingID: string | null;
 }
+export interface BalanceObservation {
+  accountID:string; day:string; observedAt:string; current:number|null; available:number|null; pending:number; currency:string;
+}
 export interface Snapshot {
   cursor?: string; accounts: Account[]; transactions: Entry[]; bank: string;
   checkedAt?: string; bankUpdatedAt?: string | null; balanceUpdatedAt?: string | null;

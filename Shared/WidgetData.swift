@@ -44,8 +44,11 @@ struct WidgetPreferences: Codable, Sendable {
 }
 func widgetSourceDate(_ value: String?) -> Date? {
     guard let value else { return nil }
-    let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return formatter.date(from: value) ?? ISO8601DateFormatter().date(from: value)
+    return (try? WidgetTimestampParser.fractional.parse(value)) ?? (try? WidgetTimestampParser.whole.parse(value))
+}
+private enum WidgetTimestampParser {
+    static let fractional = Date.ISO8601FormatStyle(includingFractionalSeconds: true)
+    static let whole = Date.ISO8601FormatStyle()
 }
 func oldestWidgetSource(_ values: [String?]) -> String? {
     values.compactMap { value -> (String, Date)? in

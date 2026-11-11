@@ -1,5 +1,5 @@
 import type { AccountsGetResponse } from 'plaid/legacy';
-import { banks, load } from './repository';
+import { bankByID, load } from './repository';
 import { plaid, PlaidError, type Env, type Bank } from './plaid';
 export interface RelinkJob { session_id:string;old_bank_id:string;new_bank_id:string|null;status:string }
 export async function relinkJobs(env:Env):Promise<RelinkJob[]> {
@@ -26,7 +26,7 @@ export async function finalizeRelink(env:Env,newID:string):Promise<void> {
   if(!job)return;
   const current=await load(env,newID,false);
   if(!current.importComplete||current.error)return;
-  const old=(await banks(env)).find(b=>b.item_id===job.old_bank_id);
+  const old=await bankByID(env,job.old_bank_id);
   if(old)try{await plaid(env,'/item/remove',{access_token:old.access_token});}
   catch(e){if(!(e instanceof PlaidError&&e.code==='ITEM_NOT_FOUND'))throw e;}
   await env.DB.batch([

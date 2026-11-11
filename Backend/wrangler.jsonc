@@ -11,7 +11,9 @@
     "PLAID_ENV": "production",
     "TRANSACTIONS_REFRESH_ENABLED": "true",
     "PUBLIC_URL": "https://tally-personal-api.mmkjp6pw26.workers.dev",
-    "HISTORY_TIME_ZONE": "America/New_York"
+    "HISTORY_TIME_ZONE": "America/New_York",
+    "OPENAI_MODEL": "gpt-6-luna",
+    "AI_DAILY_MESSAGE_LIMIT": "100"
   },
   "d1_databases": [
     {

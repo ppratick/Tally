@@ -7,6 +7,7 @@ struct ConnectionSettings: Codable {
     var url: String
     var token: String
 }
+private struct APIMessageFailure: Decodable { let error: String }
 enum Vault {
     static let service = "com.pratick.Tally.connection"
     static func read() -> ConnectionSettings? {
@@ -53,6 +54,13 @@ enum AppError: LocalizedError {
     var reconnectURL: URL?
     var selectedTab = 0
     var connectionMessage: String?
+    var chatMessages: [ChatMessage] = []
+    var chatConversationID = UUID().uuidString
+    var chatSending = false
+    var chatError: String?
+    var hasOpenAIKey = false
+    var pendingChatRequest: ChatRequest?
+    private var chatURL: URL { URL.documentsDirectory.appending(path: "chat.json") }
     var pendingLinkSessionID: String?
     var accountOrder: [String]
     var hiddenAccountIDs: [String]
@@ -78,10 +86,7 @@ enum AppError: LocalizedError {
         accountNames = preferences.dictionary(forKey: "accountNames") as? [String:String] ?? [:]
         pendingLinkSessionID = preferences.string(forKey: "pendingLinkSessionID")
         useFaceID = preferences.object(forKey: "useFaceID") as? Bool ?? false
-        let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 120
-        config.timeoutIntervalForResource = 180
-        session = URLSession(configuration: config)
+        session = AuthenticatedSession.make()
         settings = Vault.read()
         // Installation-only pairing file; consumed into this device's Keychain, then removed.
         let pairing = URL.documentsDirectory.appending(path: "Pairing.plist")
@@ -103,12 +108,72 @@ enum AppError: LocalizedError {
         }
         unlocked = true
         loadCache()
+        loadChat()
         if configured { await refresh() }
     }
     func becameActive() async {
         if unlocked && configured && !authenticating { await refresh() }
     }
-    func lock() { if useFaceID { unlocked = false; dashboard = Dashboard() } }
+    func lock() { if useFaceID { unlocked = false; dashboard = Dashboard(); chatMessages = []; pendingChatRequest = nil; chatError = nil } }
+    private func loadChat() {
+        guard let data = try? Data(contentsOf: chatURL), let archive = try? JSONDecoder().decode(ChatArchive.self, from: data), archive.serverURL == settings?.url else { return }
+        chatConversationID = archive.conversationID; chatMessages = archive.messages; pendingChatRequest = archive.pending
+        if pendingChatRequest != nil { chatError = "Your last message hasn't finished. Retry to retrieve or complete the answer." }
+    }
+    func refreshOpenAIKeyStatus() {
+        do { hasOpenAIKey = try OpenAIKeyStore.read() != nil }
+        catch { hasOpenAIKey = false; chatError = error.localizedDescription }
+    }
+    private func persistChat() throws {
+        let archive = ChatArchive(serverURL: settings?.url ?? "", conversationID: chatConversationID, messages: Array(chatMessages.suffix(100)), pending: pendingChatRequest)
+        try JSONEncoder().encode(archive).write(to: chatURL, options: [.atomic, .completeFileProtection])
+        var url = chatURL; var values = URLResourceValues(); values.isExcludedFromBackup = true
+        try url.setResourceValues(values)
+    }
+    private func appendChat(_ message: ChatMessage) {
+        chatMessages.append(message)
+        if chatMessages.count > 100 { chatMessages.removeFirst(chatMessages.count - 100) }
+    }
+    func sendChat(_ message: String, context: String) async {
+        guard let settings, unlocked, !chatSending else { return }
+        let text = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, text.count <= 4000 else { return }
+        guard pendingChatRequest == nil else { chatError = "Retry your last message or start a new chat first."; return }
+        let payload = ChatRequest(conversationID: chatConversationID, requestID: UUID().uuidString, message: text, context: context)
+        pendingChatRequest = payload
+        appendChat(ChatMessage(id: payload.requestID, role: "user", text: text))
+        await performChat(payload, settings: settings)
+    }
+    func retryChat() async {
+        guard let settings, let payload = pendingChatRequest, unlocked, !chatSending else { return }
+        await performChat(payload, settings: settings)
+    }
+    private func performChat(_ payload: ChatRequest, settings: ConnectionSettings) async {
+        chatSending = true; chatError = nil
+        defer { chatSending = false }
+        do {
+            try persistChat()
+            let body = try JSONEncoder().encode(payload)
+            let result: ChatReply = try await request("/v1/chat", method: "POST", settings: settings, body: body)
+            guard unlocked, chatConversationID == result.conversationID, self.settings?.url == settings.url, self.settings?.token == settings.token else { return }
+            appendChat(ChatMessage(id: UUID().uuidString, role: "assistant", text: result.text, sources: result.sources, modelCalls: result.modelCalls, retrievedAt: result.retrievedAt))
+            pendingChatRequest = nil
+            try persistChat()
+        } catch {
+            if unlocked { chatError = error.localizedDescription }
+        }
+    }
+    func clearChat() async {
+        guard let settings, !chatSending else { return }
+        chatSending = true; chatError = nil
+        defer { chatSending = false }
+        do {
+            struct Cleared: Decodable { let cleared: Bool }
+            let _: Cleared = try await request("/v1/chat/\(chatConversationID)", method: "DELETE", settings: settings)
+            chatMessages = []; pendingChatRequest = nil; chatConversationID = UUID().uuidString
+            try persistChat()
+        } catch { chatError = error.localizedDescription }
+    }
     func loadCache() {
         guard let data = try? Data(contentsOf: cacheURL), let saved = try? JSONDecoder().decode(CachedDashboard.self, from: data) else { return }
         dashboard = saved.dashboard; savedAt = saved.date
@@ -122,7 +187,12 @@ enum AppError: LocalizedError {
         let value = ConnectionSettings(url: endpoint.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/")), token: token.trimmingCharacters(in: .whitespacesAndNewlines))
         do {
             let result: Dashboard = try await request("/v1/dashboard", settings: value)
+            let changedConnection = settings?.url != value.url || settings?.token != value.token
             try Vault.save(value); settings = value; dashboard = result
+            if changedConnection {
+                chatConversationID = UUID().uuidString; chatMessages = []; pendingChatRequest = nil; chatError = nil
+                try persistChat()
+            }
             try? FileManager.default.removeItem(at: cacheURL)
             await refresh()
             return true
@@ -185,7 +255,11 @@ enum AppError: LocalizedError {
         } catch { self.error = error.localizedDescription }
     }
     func eraseCache() {
-        do { if FileManager.default.fileExists(atPath: cacheURL.path) { try FileManager.default.removeItem(at: cacheURL) }; dashboard = Dashboard(); savedAt = nil }
+        do {
+            for url in [cacheURL, chatURL] where FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+            dashboard = Dashboard(); savedAt = nil
+            chatMessages = []; pendingChatRequest = nil; chatError = nil; chatConversationID = UUID().uuidString
+        }
         catch { self.error = "Couldn't clear the local cache." }
     }
     var orderedAccounts: [BankAccount] {
@@ -302,16 +376,26 @@ enum AppError: LocalizedError {
         WidgetCenter.shared.reloadTimelines(ofKind: "TallyBalances")
     }
     private func request<T: Decodable>(_ path: String, method: String = "GET", settings: ConnectionSettings, body: Data? = nil) async throws -> T {
-        guard let url = URL(string: settings.url + path) else { throw AppError.message("Invalid server address.") }
+        guard let url = URL(string: settings.url + path), url.scheme == "https", url.host != nil, url.user == nil, url.password == nil else {
+            throw AppError.message("Enter a valid HTTPS server address in Settings.")
+        }
         var request = URLRequest(url: url); request.httpMethod = method
         request.httpBody = body
         if body != nil { request.setValue("application/json", forHTTPHeaderField: "Content-Type") }
         request.setValue("Bearer \(settings.token)", forHTTPHeaderField: "Authorization")
         request.setValue("Tally/1.0", forHTTPHeaderField: "User-Agent")
+        if path == "/v1/chat", method == "POST" {
+            guard let key = try OpenAIKeyStore.read() else { throw AppError.message("Add your OpenAI API key in Settings → Ask Tally, then retry your message.") }
+            request.setValue(key, forHTTPHeaderField: "X-OpenAI-API-Key")
+        }
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw AppError.message("The server didn't respond.") }
         guard (200..<300).contains(http.statusCode) else {
             if http.statusCode == 401 { throw AppError.message("Your access key wasn't accepted. Update it in Settings.") }
+            if path.hasPrefix("/v1/chat") {
+                let failure = try? JSONDecoder().decode(APIMessageFailure.self, from: data)
+                throw AppError.message(failure?.error ?? "Ask Tally couldn't connect. Please try again.")
+            }
             if http.statusCode == 429 { throw AppError.message("Please wait 30 seconds before syncing again.") }
             throw AppError.message("The server couldn't update right now. Try again shortly.")
         }

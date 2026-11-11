@@ -42,10 +42,7 @@ struct BankTransaction: Codable, Identifiable, Hashable {
     let category: String
     let pendingID: String?
     var categoryName: String { category.replacingOccurrences(of: "_", with: " ").capitalized }
-    var dateValue: Date { Self.parser.date(from: date) ?? .distantPast }
-    private static let parser: DateFormatter = {
-        let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"; return f
-    }()
+    var dateValue: Date { bankDay(date) ?? .distantPast }
     var symbol: String {
         switch category {
         case "FOOD_AND_DRINK": return "fork.knife"
@@ -99,7 +96,8 @@ struct Dashboard: Codable {
     var recurring: [RecurringPayment]? = nil
     var activeAccounts: [BankAccount] { accounts.filter { $0.archived != true } }
     var sortedTransactions: [BankTransaction] {
-        transactions.filter { t in accounts.contains { $0.id == t.accountID } }.sorted {
+        let accountIDs = Set(accounts.map(\.id))
+        return transactions.filter { accountIDs.contains($0.accountID) }.sorted {
             $0.date == $1.date ? $0.id < $1.id : $0.date > $1.date
         }
     }
@@ -107,8 +105,9 @@ struct Dashboard: Codable {
     var debt: Double { sumMoney(activeAccounts.filter { $0.isCredit && $0.currency == "USD" }.compactMap { displayBalance(for: $0) }) }
     var pending: [BankTransaction] {
         // A matched posted replacement must not be counted as pending a second time.
-        let postedReplacements = Set(sortedTransactions.filter { !$0.pending }.compactMap(\.pendingID))
-        return sortedTransactions.filter { $0.pending && !postedReplacements.contains($0.id) }
+        let entries = sortedTransactions
+        let postedReplacements = Set(entries.filter { !$0.pending }.compactMap(\.pendingID))
+        return entries.filter { $0.pending && !postedReplacements.contains($0.id) }
     }
     func displayBalance(for account: BankAccount) -> Double? {
         if account.isCredit {
@@ -119,8 +118,10 @@ struct Dashboard: Codable {
         return account.available ?? account.current
     }
     func recentActivity(accountID: String? = nil, minimumCount: Int = 5) -> [BankTransaction] {
-        let pendingEntries = pending.filter { accountID == nil || $0.accountID == accountID }
-        let posted = sortedTransactions.filter { !$0.pending && (accountID == nil || $0.accountID == accountID) }
+        let entries = sortedTransactions
+        let replacements = Set(entries.filter { !$0.pending }.compactMap(\.pendingID))
+        let pendingEntries = entries.filter { $0.pending && !replacements.contains($0.id) && (accountID == nil || $0.accountID == accountID) }
+        let posted = entries.lazy.filter { !$0.pending && (accountID == nil || $0.accountID == accountID) }
         return pendingEntries + posted.prefix(max(0, minimumCount - pendingEntries.count))
     }
     func availableAfterPending(for account: BankAccount) -> Double? {
@@ -135,7 +136,10 @@ struct Dashboard: Codable {
         account.isCredit ? "incl. pending" : (account.available == nil ? "current" : "available")
     }
     func pendingTotal(for account: BankAccount) -> Double {
-        sumMoney(pending.filter { $0.accountID == account.id && $0.currency == account.currency }.map(\.amount))
+        let accountIDs = Set(accounts.map(\.id))
+        let entries = transactions.filter { accountIDs.contains($0.accountID) }
+        let replacements = Set(entries.filter { !$0.pending }.compactMap(\.pendingID))
+        return sumMoney(entries.filter { $0.pending && !replacements.contains($0.id) && $0.accountID == account.id && $0.currency == account.currency }.map(\.amount))
     }
 }
 private func sumMoney(_ values: [Double]) -> Double {
@@ -149,11 +153,11 @@ func money(_ value: Double?, currency: String = "USD") -> String {
 
 func parseBankDate(_ value: String?) -> Date? {
     guard let value else { return nil }
-    let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    if let date = formatter.date(from: value) { return date }
-    formatter.formatOptions = [.withInternetDateTime]
-    return formatter.date(from: value)
+    return (try? BankTimestampParser.fractional.parse(value)) ?? (try? BankTimestampParser.whole.parse(value))
+}
+private enum BankTimestampParser {
+    static let fractional = Date.ISO8601FormatStyle(includingFractionalSeconds: true)
+    static let whole = Date.ISO8601FormatStyle()
 }
 
 enum ActivityStatus: String, CaseIterable {
@@ -173,10 +177,11 @@ struct ActivityFilter {
     var status: ActivityStatus = .all
     var direction: ActivityDirection = .all
     func apply(to dashboard: Dashboard, search: String = "") -> [BankTransaction] {
-        let validPending = Set(dashboard.pending.map(\.id))
+        let entries = dashboard.sortedTransactions
+        let replacements = Set(entries.filter { !$0.pending }.compactMap(\.pendingID))
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
-        return dashboard.sortedTransactions.filter { transaction in
-            (!transaction.pending || validPending.contains(transaction.id)) &&
+        return entries.filter { transaction in
+            (!transaction.pending || !replacements.contains(transaction.id)) &&
             (accountID == nil || transaction.accountID == accountID) &&
             (status == .all || (status == .pending ? transaction.pending : !transaction.pending)) &&
             (direction == .all || (direction == .incoming ? transaction.amount < 0 : transaction.amount > 0)) &&
@@ -195,8 +200,7 @@ struct BalancePoint: Codable, Identifiable {
     let currency: String
     var id: String { accountID + day }
     var date: Date {
-        let formatter=DateFormatter();formatter.locale=Locale(identifier:"en_US_POSIX");formatter.dateFormat="yyyy-MM-dd"
-        return formatter.date(from:day) ?? .distantPast
+        bankDay(day) ?? .distantPast
     }
     func balance(isCredit:Bool) -> Double? {
         if isCredit { return current.map { sumMoney([$0,pending]) } }

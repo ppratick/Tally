@@ -13,6 +13,7 @@ struct RootView: View {
                 TabView(selection: Binding(get: { store.selectedTab }, set: { store.selectedTab = $0 })) {
                     Tab("Home", systemImage: "square.grid.2x2.fill", value: 0) { NavigationStack { HomeView() } }
                     Tab("Insights", systemImage: "chart.xyaxis.line", value: 2) { NavigationStack { InsightsView() } }
+                    Tab("Ask Tally", systemImage: "bubble.left.and.bubble.right", value: 3) { NavigationStack { ChatView() } }
                     Tab("Accounts", systemImage: "creditcard", value: 1) { NavigationStack { AccountsView() } }
                 }
             }
@@ -435,6 +436,11 @@ struct TransactionDetailView: View {
                 }
                 LabeledContent("Direction", value: transaction.amount < 0 ? "Incoming" : transaction.amount > 0 ? "Outgoing" : "No movement")
             }.font(.subheadline)
+            Section {
+                NavigationLink {
+                    ChatView(context: "Transaction detail screen. Transaction ID: \(transaction.id). Account ID: \(transaction.accountID). Date: \(transaction.date).", initialPrompt: "Tell me about this charge and similar transactions.")
+                } label: { Label("Ask about this transaction", systemImage: "sparkles") }
+            }
             if transaction.pending {
                 Section { Text("The amount or merchant may change when this transaction posts.").font(.caption).foregroundStyle(.secondary) }
             }
@@ -610,6 +616,11 @@ struct AccountDetailView: View {
             VStack(alignment: .leading, spacing: 24) {
                 if let account {
                     hero(account)
+                    NavigationLink {
+                        ChatView(context: "Account detail screen. Account ID: \(accountID).", initialPrompt: "Give me an overview of this account.")
+                    } label: {
+                        Label("Ask about this account", systemImage: "sparkles").font(.subheadline.weight(.medium)).frame(maxWidth: .infinity, alignment: .leading).padding(18).financeCard()
+                    }.buttonStyle(.plain)
                     VStack(alignment: .leading, spacing: 12) {
                         SectionHeading(title: account.isCredit ? "Credit overview" : "Balance details")
                         balances(account)
@@ -705,6 +716,9 @@ struct SettingsView: View {
                 Section("Privacy") {
                     Toggle("App lock", isOn: Binding(get: { store.useFaceID }, set: { store.useFaceID = $0 }))
                     Text("Optional Face ID or passcode protection.").font(.caption).foregroundStyle(.secondary)
+                }
+                Section {
+                    NavigationLink { AISettingsView() } label: { Label("Ask Tally", systemImage: "sparkles") }
                 }
                 Section("Data") {
                     Picker("Automatic refresh", selection: Binding(get: { store.automaticRefreshMinutes }, set: { minutes in Task { await store.updateRefreshInterval(minutes) } })) {

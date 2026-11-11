@@ -135,3 +135,15 @@ for(const [observed,day,zone] of [
  assert.equal(statement.args[1],day);
 }
 console.log('Refresh optimization passed: unchanged sync skips saved-history reads while preserving pending balances; changes and legacy caches load history; only the target credential is decrypted; cached date formatters handle DST and configured time zones.');
+// Read endpoints must not load usable bank credentials or require the decryption key.
+const readOnlyEnv={...env,TOKEN_ENCRYPTION_KEY:'not-a-key'};
+const credentialQueries:string[]=[];
+readOnlyEnv.DB={...DB,prepare(sql:string){credentialQueries.push(sql);return DB.prepare(sql);}};
+for(const [path,token] of [['/v1/dashboard',env.APP_TOKEN],['/v1/widget',env.WIDGET_TOKEN]]) {
+  const response=await worker.fetch(new Request('https://example.com'+path,{headers:{Authorization:'Bearer '+token}}),readOnlyEnv,ctx);
+  assert.equal(response.status,200);
+  const body=JSON.stringify(await response.json());
+  assert.ok(!body.includes('test-access')&&!body.includes('token_encrypted'));
+}
+assert.ok(!credentialQueries.some(sql=>sql.includes('token_encrypted')));
+console.log('Credential isolation passed: dashboard and widget reads work without decryption and never select encrypted bank tokens.');

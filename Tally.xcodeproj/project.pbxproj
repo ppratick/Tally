@@ -9,21 +9,29 @@
 /* Begin PBXBuildFile section */
 		0A0E0A3639A4CA894A0152D4 /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 096DC445A470F138D54384CF /* Views.swift */; };
 		0B514CB03CE1DDBFE24C2E47 /* HistoryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7A924B01E91C5B3508B935 /* HistoryViews.swift */; };
+		0B7C364C723106D58A742035 /* AISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC84C254979651E40C401D7 /* AISettingsView.swift */; };
 		0C20BD96ABAD5D40331CD0D8 /* TallyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0CCCCECB1E61EDCE2D768A /* TallyTheme.swift */; };
 		1357DA2442A611DAF6F25356 /* TallyWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E364D292FE2D94EB30343D31 /* TallyWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		243CE7D792774C1313223FAB /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A02F197D1407A6D7109EA1 /* Models.swift */; };
 		28BF2014F5B44F63F2CD2B4D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0E91360750E6493DD7621468 /* Assets.xcassets */; };
+		2F07707FA06515EC3D68ACA0 /* OpenAIKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E91E1C577295507F6B54AB75 /* OpenAIKeyStore.swift */; };
 		323F8EA2FFEDE0D19BE105A8 /* FinanceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4A841014BA9A72ECE39915 /* FinanceModels.swift */; };
 		35BBEA0B07AD308B03814152 /* TallyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 952D829F4BE8048607324226 /* TallyApp.swift */; };
 		446D72DB8B5D450844D65ABF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0E91360750E6493DD7621468 /* Assets.xcassets */; };
 		5DF9DE19D459F63E1F6371BE /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC42AC1AE04FDA1CE08380C /* WidgetData.swift */; };
 		7858475BB43AA887391B88A1 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC90F95B515D9CA424DE3479 /* Store.swift */; };
+		84D1E9C00C02D9F6C11880F1 /* ChatViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DE33F8713A9BA1BEBF6FF41 /* ChatViews.swift */; };
 		934750E2E676ABF13B652E30 /* TallyWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FCFF664DA92CD14DE2BCA42 /* TallyWidget.swift */; };
+		9AE3EDED9F028D9761E8FEB6 /* AuthenticatedSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06866882B8DBC8E80C3CA44 /* AuthenticatedSession.swift */; };
 		9F2BFCD5D4CDDA004D519330 /* TallyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0CCCCECB1E61EDCE2D768A /* TallyTheme.swift */; };
+		9F7A5FE8DD833A297C104A93 /* ChatDictation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C6449844F19A287B7E2178 /* ChatDictation.swift */; };
+		AC7F75CC7FC57FB8EAB84CEF /* ChatAnswerText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8842DDC53BED9FD353C64AA2 /* ChatAnswerText.swift */; };
 		C4929C1A11392AA68B0DDD8E /* PaymentsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2761D6EDC7F32E7A50089C22 /* PaymentsViews.swift */; };
 		D6E4C011A51B260ADE738668 /* SpendingIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82D31C9F7A54C9D6F31E1E1 /* SpendingIndex.swift */; };
 		EA9C6C7E1CC87FE54D6C1FD6 /* SpendingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F8AF60DA7A5537290BE930 /* SpendingViews.swift */; };
 		EFE2C9B16A3E3D0BE4BA9E85 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC42AC1AE04FDA1CE08380C /* WidgetData.swift */; };
+		F7F93DFD4132BD5AB649ED59 /* ChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 055ECADCF90842BF840EA06B /* ChatModels.swift */; };
+		F828DE3CF38B3F1033E0EB01 /* AuthenticatedSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06866882B8DBC8E80C3CA44 /* AuthenticatedSession.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +59,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		055ECADCF90842BF840EA06B /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
 		096DC445A470F138D54384CF /* Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views.swift; sourceTree = "<group>"; };
 		0E91360750E6493DD7621468 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1FBCC93C895D5DAAF35E7E33 /* Tally.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Tally.entitlements; sourceTree = "<group>"; };
@@ -59,15 +68,21 @@
 		3486B6AAAF6B6543613460DD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3FCFF664DA92CD14DE2BCA42 /* TallyWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TallyWidget.swift; sourceTree = "<group>"; };
 		4DCF1A5BC6FA366C4B658D35 /* Tally.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tally.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5DE33F8713A9BA1BEBF6FF41 /* ChatViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViews.swift; sourceTree = "<group>"; };
 		6A4A841014BA9A72ECE39915 /* FinanceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceModels.swift; sourceTree = "<group>"; };
 		7F575993EA15D30937E5B831 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		8842DDC53BED9FD353C64AA2 /* ChatAnswerText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAnswerText.swift; sourceTree = "<group>"; };
 		952D829F4BE8048607324226 /* TallyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TallyApp.swift; sourceTree = "<group>"; };
 		ACC42AC1AE04FDA1CE08380C /* WidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
+		B5C6449844F19A287B7E2178 /* ChatDictation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatDictation.swift; sourceTree = "<group>"; };
 		BA0CDA93068626DAD82BD8BE /* TallyWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TallyWidget.entitlements; sourceTree = "<group>"; };
+		C06866882B8DBC8E80C3CA44 /* AuthenticatedSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticatedSession.swift; sourceTree = "<group>"; };
 		C3A02F197D1407A6D7109EA1 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		CC90F95B515D9CA424DE3479 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		CEC84C254979651E40C401D7 /* AISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettingsView.swift; sourceTree = "<group>"; };
 		DA7A924B01E91C5B3508B935 /* HistoryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViews.swift; sourceTree = "<group>"; };
 		E364D292FE2D94EB30343D31 /* TallyWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = TallyWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E91E1C577295507F6B54AB75 /* OpenAIKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIKeyStore.swift; sourceTree = "<group>"; };
 		EA0CCCCECB1E61EDCE2D768A /* TallyTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TallyTheme.swift; sourceTree = "<group>"; };
 		F82D31C9F7A54C9D6F31E1E1 /* SpendingIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingIndex.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -76,6 +91,7 @@
 		1DC466AB5A67F22D9C7BACFB /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				C06866882B8DBC8E80C3CA44 /* AuthenticatedSession.swift */,
 				EA0CCCCECB1E61EDCE2D768A /* TallyTheme.swift */,
 				ACC42AC1AE04FDA1CE08380C /* WidgetData.swift */,
 			);
@@ -95,11 +111,17 @@
 		4F8EC9F444C4FB48A05B004D /* Tally */ = {
 			isa = PBXGroup;
 			children = (
+				CEC84C254979651E40C401D7 /* AISettingsView.swift */,
 				0E91360750E6493DD7621468 /* Assets.xcassets */,
+				8842DDC53BED9FD353C64AA2 /* ChatAnswerText.swift */,
+				B5C6449844F19A287B7E2178 /* ChatDictation.swift */,
+				055ECADCF90842BF840EA06B /* ChatModels.swift */,
+				5DE33F8713A9BA1BEBF6FF41 /* ChatViews.swift */,
 				6A4A841014BA9A72ECE39915 /* FinanceModels.swift */,
 				DA7A924B01E91C5B3508B935 /* HistoryViews.swift */,
 				7F575993EA15D30937E5B831 /* Info.plist */,
 				C3A02F197D1407A6D7109EA1 /* Models.swift */,
+				E91E1C577295507F6B54AB75 /* OpenAIKeyStore.swift */,
 				2761D6EDC7F32E7A50089C22 /* PaymentsViews.swift */,
 				F82D31C9F7A54C9D6F31E1E1 /* SpendingIndex.swift */,
 				25F8AF60DA7A5537290BE930 /* SpendingViews.swift */,
@@ -232,6 +254,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F828DE3CF38B3F1033E0EB01 /* AuthenticatedSession.swift in Sources */,
 				0C20BD96ABAD5D40331CD0D8 /* TallyTheme.swift in Sources */,
 				934750E2E676ABF13B652E30 /* TallyWidget.swift in Sources */,
 				EFE2C9B16A3E3D0BE4BA9E85 /* WidgetData.swift in Sources */,
@@ -242,9 +265,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B7C364C723106D58A742035 /* AISettingsView.swift in Sources */,
+				9AE3EDED9F028D9761E8FEB6 /* AuthenticatedSession.swift in Sources */,
+				AC7F75CC7FC57FB8EAB84CEF /* ChatAnswerText.swift in Sources */,
+				9F7A5FE8DD833A297C104A93 /* ChatDictation.swift in Sources */,
+				F7F93DFD4132BD5AB649ED59 /* ChatModels.swift in Sources */,
+				84D1E9C00C02D9F6C11880F1 /* ChatViews.swift in Sources */,
 				323F8EA2FFEDE0D19BE105A8 /* FinanceModels.swift in Sources */,
 				0B514CB03CE1DDBFE24C2E47 /* HistoryViews.swift in Sources */,
 				243CE7D792774C1313223FAB /* Models.swift in Sources */,
+				2F07707FA06515EC3D68ACA0 /* OpenAIKeyStore.swift in Sources */,
 				C4929C1A11392AA68B0DDD8E /* PaymentsViews.swift in Sources */,
 				D6E4C011A51B260ADE738668 /* SpendingIndex.swift in Sources */,
 				EA9C6C7E1CC87FE54D6C1FD6 /* SpendingViews.swift in Sources */,
