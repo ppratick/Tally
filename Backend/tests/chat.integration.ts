@@ -16,7 +16,7 @@ let mode='normal',requests:any[]=[],dataLoads=0,release:(()=>void)|undefined;
 let deviceKey='test-secret';
 globalThis.fetch=async(input:any,init:any)=>{
   assert.equal(input,'https://api.openai.com/v1/responses');assert.equal(init.headers.Authorization,'Bearer '+deviceKey);
-  assert.equal(init.redirect,'error');
+  assert.equal(init.redirect,'manual');
   const body=JSON.parse(init.body);requests.push(body);
   assert.equal(body.store,false);assert.ok(!JSON.stringify(body).includes(deviceKey));
   if(body.model==='gpt-6-luna')assert.deepEqual(body.reasoning,{effort:'none'});

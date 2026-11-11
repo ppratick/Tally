@@ -1,7 +1,7 @@
 import type { Env } from './plaid';
 import { financialTools, createFinancialToolRunner, type FinancialData } from './chat-tools';
 import type { Entry } from './model';
-import { readText, BodyLimitError } from './http';
+import { readText, BodyLimitError, fetchWithoutRedirects } from './http';
 
 type Item = Record<string, unknown>;
 interface Reply {
@@ -48,8 +48,8 @@ async function model(env:Env & {OPENAI_API_KEY:string},input:Item[],context:stri
     .bind(usageID,conversationID,requestID,callNumber,modelName,new Date().toISOString()).run();
   let httpStatus:number|null=null;
   try {
-    const response=await fetch('https://api.openai.com/v1/responses',{
-      method:'POST',redirect:'error',headers:{Authorization:`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json'},signal,
+    const response=await fetchWithoutRedirects('https://api.openai.com/v1/responses',{
+      method:'POST',headers:{Authorization:`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json'},signal,
       body:JSON.stringify({model:modelName,store:false,instructions:instructions+'\n'+context,
         input,tools:financialTools,tool_choice:final?'none':'auto',parallel_tool_calls:true,max_output_tokens:1800,
         ...(modelName.startsWith('gpt-6-luna')?{reasoning:{effort:'none'}}:{}),

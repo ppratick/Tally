@@ -1,3 +1,5 @@
+import { fetchWithoutRedirects } from './http';
+
 export interface Bank { item_id: string; access_token: string; institution_id: string; active: boolean }
 export interface Env {
   DB: D1Database; PLAID_CLIENT_ID: string; PLAID_SECRET: string; PLAID_ENV: string;
@@ -12,8 +14,8 @@ export class PlaidError extends Error {
 export async function plaid<T>(env: Env, route: string, body: object): Promise<T> {
   if (!['production','sandbox'].includes(env.PLAID_ENV)) throw new Error('Invalid environment');
   for (let attempt=0; attempt<3; attempt++) {
-    const response = await fetch(`https://${env.PLAID_ENV}.plaid.com${route}`, {
-      method:'POST', redirect:'error', headers:{'Content-Type':'application/json','Plaid-Version':'2020-09-14'},
+    const response = await fetchWithoutRedirects(`https://${env.PLAID_ENV}.plaid.com${route}`, {
+      method:'POST', headers:{'Content-Type':'application/json','Plaid-Version':'2020-09-14'},
       body:JSON.stringify({client_id:env.PLAID_CLIENT_ID,secret:env.PLAID_SECRET,...body}),signal:AbortSignal.timeout(60000)
     });
     const result=await response.json() as T & {error_code?:string;request_id?:string};
