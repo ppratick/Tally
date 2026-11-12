@@ -132,6 +132,7 @@ private struct RecurringDetailView: View {
                 }
             }
         }.navigationTitle(stream.merchant).navigationBarTitleDisplayMode(.inline)
+        .tallyTopFade()
     }
 }
 extension View {

@@ -67,7 +67,11 @@ enum AppError: LocalizedError {
     var accountNames: [String:String]
     private var browserIsAdding = false
     var useFaceID: Bool { didSet { UserDefaults.standard.set(useFaceID, forKey: "useFaceID") } }
+    #if DEBUG
+    var configured: Bool { settings != nil || DemoData.enabled }
+    #else
     var configured: Bool { settings != nil }
+    #endif
     private(set) var automaticRefreshMinutes: Int
     var savingRefreshInterval = false
     var lastFullRefreshAt: Date? { parseBankDate(dashboard.lastFullRefreshAt) }
@@ -96,6 +100,9 @@ enum AppError: LocalizedError {
         }
     }
     func authenticate() async {
+        #if DEBUG
+        if DemoData.enabled { dashboard = DemoData.dashboard; chatMessages = DemoData.chat; hasOpenAIKey = true; unlocked = true; return }
+        #endif
         guard !authenticating else { return }
         authenticating = true
         defer { authenticating = false }
@@ -112,6 +119,9 @@ enum AppError: LocalizedError {
         if configured { await refresh() }
     }
     func becameActive() async {
+        #if DEBUG
+        if DemoData.enabled { return }
+        #endif
         if unlocked && configured && !authenticating { await refresh() }
     }
     func lock() { if useFaceID { unlocked = false; dashboard = Dashboard(); chatMessages = []; pendingChatRequest = nil; chatError = nil } }
@@ -121,6 +131,9 @@ enum AppError: LocalizedError {
         if pendingChatRequest != nil { chatError = "Your last message hasn't finished. Retry to retrieve or complete the answer." }
     }
     func refreshOpenAIKeyStatus() {
+        #if DEBUG
+        if DemoData.enabled { hasOpenAIKey = true; return }
+        #endif
         do { hasOpenAIKey = try OpenAIKeyStore.read() != nil }
         catch { hasOpenAIKey = false; chatError = error.localizedDescription }
     }

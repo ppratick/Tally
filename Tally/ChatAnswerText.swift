@@ -16,20 +16,20 @@ struct ChatAnswerText: View, Equatable {
     }
     @ViewBuilder private func blockView(_ block: Block) -> some View {
         switch block {
-        case .paragraph(let value): inline(value).font(.body).lineSpacing(5).textSelection(.enabled)
-        case .heading(let value): inline(value).font(.headline).padding(.top, 4).textSelection(.enabled)
+        case .paragraph(let value): inline(value).font(.body).lineSpacing(5)
+        case .heading(let value): inline(value).font(.headline).padding(.top, 4)
         case .bullet(let marker, let value):
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(marker).foregroundStyle(.secondary).frame(minWidth: 12, alignment: .leading)
-                inline(value).frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled)
+                inline(value).frame(maxWidth: .infinity, alignment: .leading)
             }.font(.body).lineSpacing(4)
         case .quote(let value):
             HStack(spacing: 12) {
                 RoundedRectangle(cornerRadius: 2).fill(Color.tallyAccent.opacity(0.4)).frame(width: 3)
-                inline(value).foregroundStyle(.secondary).textSelection(.enabled)
+                inline(value).foregroundStyle(.secondary)
             }.fixedSize(horizontal: false, vertical: true)
         case .code(let value):
-            ScrollView(.horizontal) { Text(value).font(.system(.footnote, design: .monospaced)).textSelection(.enabled).padding(14) }
+            ScrollView(.horizontal) { Text(value).font(.system(.footnote, design: .monospaced)).padding(14) }
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
         case .table(let rows):
             ScrollView(.horizontal, showsIndicators: true) {
@@ -38,13 +38,13 @@ struct ChatAnswerText: View, Equatable {
                         GridRow {
                             ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
                                 inline(cell).font(index == 0 ? .subheadline.weight(.semibold) : .subheadline)
-                                    .fixedSize(horizontal: true, vertical: false).textSelection(.enabled)
+                                    .fixedSize(horizontal: true, vertical: false)
                             }
                         }
                         if index == 0 { Divider().gridCellColumns(rows.map(\.count).max() ?? 1) }
                     }
                 }.padding(16)
-            }.background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+            }.background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
         }
     }
     private var blocks: [Block] {

@@ -5,28 +5,38 @@ private enum InsightsSection: String, CaseIterable {
     case spending = "Spending", balances = "Balances", bills = "Recurring"
 }
 struct InsightsView: View {
+    @Environment(TallyStore.self) private var store
     @State private var section = InsightsSection.spending
+    @Namespace private var tabs
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 4) {
-                ForEach(InsightsSection.allCases, id: \.self) { item in
-                    Button { withAnimation(.easeInOut(duration: 0.16)) { section = item } } label: {
-                        Text(item.rawValue).font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .foregroundStyle(section == item ? Color.primary : Color.secondary)
-                            .background {
-                                if section == item { RoundedRectangle(cornerRadius: 12).fill(Color(uiColor: .secondarySystemGroupedBackground)).shadow(color: .black.opacity(0.05), radius: 2, y: 1) }
-                            }.contentShape(Rectangle())
-                    }.buttonStyle(.plain).accessibilityAddTraits(section == item ? .isSelected : [])
-                }
-            }.padding(4).background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 16))
-                .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 4)
             switch section {
             case .balances: BalanceHistoryView(accountID: nil, embedded: true)
             case .spending: MonthlySpendingView()
             case .bills: RecurringPaymentsView()
             }
-        }.background(Color.tallyCanvas)
+        }.background(Color.tallyCanvas).navigationTitle("Insights")
+        .tallyRootScreen("Insights", subtitle: "Spending and trends") {
+            GlassIconButton(systemImage: "arrow.clockwise", label: "Refresh accounts", busy: store.busy) { Task { await store.refreshManually() } }.disabled(store.busy)
+        } accessory: {
+            sectionPicker
+        }
+    }
+}
+private extension InsightsView {
+    var sectionPicker: some View {
+            HStack(spacing: 4) {
+                ForEach(InsightsSection.allCases, id: \.self) { item in
+                    Button { withAnimation(.snappy(duration: 0.22)) { section = item } } label: {
+                        Text(item.rawValue).font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 40)
+                            .foregroundStyle(section == item ? Color.primary : Color.secondary)
+                            .background {
+                                if section == item { Capsule().fill(Color(uiColor: .secondarySystemGroupedBackground)).shadow(color: .black.opacity(0.06), radius: 3, y: 1).matchedGeometryEffect(id: "insights-tab", in: tabs) }
+                            }.contentShape(Capsule())
+                    }.buttonStyle(.plain).accessibilityAddTraits(section == item ? .isSelected : [])
+                }
+            }.padding(4).tallyGlass(in: Capsule())
     }
 }
 struct MonthlySpendingView: View {
@@ -155,5 +165,6 @@ private struct SpendingTransactionsView: View {
                 NavigationLink { TransactionDetailView(transaction: transaction) } label: { TransactionRow(transaction: transaction) }
             }
         }.navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+        .tallyTopFade()
     }
 }

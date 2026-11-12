@@ -10,6 +10,7 @@
 		0A0E0A3639A4CA894A0152D4 /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 096DC445A470F138D54384CF /* Views.swift */; };
 		0B514CB03CE1DDBFE24C2E47 /* HistoryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7A924B01E91C5B3508B935 /* HistoryViews.swift */; };
 		0B7C364C723106D58A742035 /* AISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC84C254979651E40C401D7 /* AISettingsView.swift */; };
+		0C15ECEEC88DFFC81C4377A4 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E98B6EC22B517594689FCE52 /* DesignSystem.swift */; };
 		0C20BD96ABAD5D40331CD0D8 /* TallyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0CCCCECB1E61EDCE2D768A /* TallyTheme.swift */; };
 		1357DA2442A611DAF6F25356 /* TallyWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E364D292FE2D94EB30343D31 /* TallyWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		243CE7D792774C1313223FAB /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A02F197D1407A6D7109EA1 /* Models.swift */; };
@@ -19,6 +20,7 @@
 		35BBEA0B07AD308B03814152 /* TallyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 952D829F4BE8048607324226 /* TallyApp.swift */; };
 		446D72DB8B5D450844D65ABF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0E91360750E6493DD7621468 /* Assets.xcassets */; };
 		5DF9DE19D459F63E1F6371BE /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC42AC1AE04FDA1CE08380C /* WidgetData.swift */; };
+		6752E9302DA02B3718B6FCD9 /* DemoData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C022C361FD3443539005FBB /* DemoData.swift */; };
 		7858475BB43AA887391B88A1 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC90F95B515D9CA424DE3479 /* Store.swift */; };
 		84D1E9C00C02D9F6C11880F1 /* ChatViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DE33F8713A9BA1BEBF6FF41 /* ChatViews.swift */; };
 		934750E2E676ABF13B652E30 /* TallyWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FCFF664DA92CD14DE2BCA42 /* TallyWidget.swift */; };
@@ -73,6 +75,7 @@
 		7F575993EA15D30937E5B831 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8842DDC53BED9FD353C64AA2 /* ChatAnswerText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAnswerText.swift; sourceTree = "<group>"; };
 		952D829F4BE8048607324226 /* TallyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TallyApp.swift; sourceTree = "<group>"; };
+		9C022C361FD3443539005FBB /* DemoData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoData.swift; sourceTree = "<group>"; };
 		ACC42AC1AE04FDA1CE08380C /* WidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
 		B5C6449844F19A287B7E2178 /* ChatDictation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatDictation.swift; sourceTree = "<group>"; };
 		BA0CDA93068626DAD82BD8BE /* TallyWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TallyWidget.entitlements; sourceTree = "<group>"; };
@@ -83,6 +86,7 @@
 		DA7A924B01E91C5B3508B935 /* HistoryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViews.swift; sourceTree = "<group>"; };
 		E364D292FE2D94EB30343D31 /* TallyWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = TallyWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E91E1C577295507F6B54AB75 /* OpenAIKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIKeyStore.swift; sourceTree = "<group>"; };
+		E98B6EC22B517594689FCE52 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		EA0CCCCECB1E61EDCE2D768A /* TallyTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TallyTheme.swift; sourceTree = "<group>"; };
 		F82D31C9F7A54C9D6F31E1E1 /* SpendingIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingIndex.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -117,6 +121,8 @@
 				B5C6449844F19A287B7E2178 /* ChatDictation.swift */,
 				055ECADCF90842BF840EA06B /* ChatModels.swift */,
 				5DE33F8713A9BA1BEBF6FF41 /* ChatViews.swift */,
+				9C022C361FD3443539005FBB /* DemoData.swift */,
+				E98B6EC22B517594689FCE52 /* DesignSystem.swift */,
 				6A4A841014BA9A72ECE39915 /* FinanceModels.swift */,
 				DA7A924B01E91C5B3508B935 /* HistoryViews.swift */,
 				7F575993EA15D30937E5B831 /* Info.plist */,
@@ -271,6 +277,8 @@
 				9F7A5FE8DD833A297C104A93 /* ChatDictation.swift in Sources */,
 				F7F93DFD4132BD5AB649ED59 /* ChatModels.swift in Sources */,
 				84D1E9C00C02D9F6C11880F1 /* ChatViews.swift in Sources */,
+				6752E9302DA02B3718B6FCD9 /* DemoData.swift in Sources */,
+				0C15ECEEC88DFFC81C4377A4 /* DesignSystem.swift in Sources */,
 				323F8EA2FFEDE0D19BE105A8 /* FinanceModels.swift in Sources */,
 				0B514CB03CE1DDBFE24C2E47 /* HistoryViews.swift in Sources */,
 				243CE7D792774C1313223FAB /* Models.swift in Sources */,

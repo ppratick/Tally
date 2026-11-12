@@ -13,7 +13,7 @@ struct RootView: View {
                 TabView(selection: Binding(get: { store.selectedTab }, set: { store.selectedTab = $0 })) {
                     Tab("Home", systemImage: "square.grid.2x2.fill", value: 0) { NavigationStack { HomeView() } }
                     Tab("Insights", systemImage: "chart.xyaxis.line", value: 2) { NavigationStack { InsightsView() } }
-                    Tab("Ask Tally", systemImage: "bubble.left.and.bubble.right", value: 3) { NavigationStack { ChatView() } }
+                    Tab("Ask Tally", systemImage: "bubble.left.and.bubble.right", value: 3) { NavigationStack { ChatView(inTab: true) } }
                     Tab("Accounts", systemImage: "creditcard", value: 1) { NavigationStack { AccountsView() } }
                 }
             }
@@ -131,9 +131,11 @@ struct HomeView: View {
             }.padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 28)
         }
         .background(Color.tallyCanvas).navigationTitle("Tally")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) { RefreshButton() }
-            ToolbarItem(placement: .topBarTrailing) { Button { showSettings = true } label: { Image(systemName: "gearshape") }.accessibilityLabel("Settings") }
+        .tallyRootScreen("Tally", subtitle: Date.now.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())) {
+            HStack(spacing: 10) {
+                GlassIconButton(systemImage: "arrow.clockwise", label: "Refresh accounts", busy: store.busy) { Task { await store.refreshManually() } }.disabled(store.busy)
+                GlassIconButton(systemImage: "gearshape", label: "Settings") { showSettings = true }
+            }
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
     }
@@ -210,7 +212,10 @@ struct BankMark: View {
         Group {
             if let asset { Image(asset).resizable().scaledToFit().padding(size * 0.06) }
             else if let logo = account.logo, let data = Data(base64Encoded: logo), let image = UIImage(data: data) { Image(uiImage: image).resizable().scaledToFit().padding(size * 0.06) }
-            else { Text(String(account.bank.prefix(1))).font(.headline).foregroundStyle(Color.tallyAccent) }
+            else {
+                Text(String(account.bank.prefix(1))).font(.system(size: size * 0.4, weight: .semibold, design: .rounded)).foregroundStyle(Color.tallyAccent)
+                    .frame(width: size * 0.82, height: size * 0.82).background(Color.tallyAccent.opacity(0.1), in: Circle())
+            }
         }.frame(width: size, height: size).accessibilityLabel(account.shortBank)
     }
 }
@@ -361,6 +366,7 @@ struct TransactionsView: View {
         .listStyle(.insetGrouped).listSectionSpacing(18).scrollContentBackground(.hidden).background(Color.tallyCanvas)
         .navigationTitle("Transactions").navigationBarTitleDisplayMode(lockedAccountID == nil ? .large : .inline)
         .searchable(text: $search, prompt: "Search transactions")
+        .tallyTopFade()
         .toolbar { ToolbarItem(placement: .topBarTrailing) { RefreshButton() } }
     }
     @ViewBuilder private var accountControl: some View {
@@ -446,6 +452,7 @@ struct TransactionDetailView: View {
             }
         }
         .listSectionSpacing(20).navigationTitle("Transaction").navigationBarTitleDisplayMode(.inline)
+        .tallyTopFade()
     }
 }
 struct AccountsView: View {
@@ -454,8 +461,13 @@ struct AccountsView: View {
     @State private var management: BankAccount?
     @State private var addBank = false
     @State private var editMode = EditMode.inactive
+    private var showsStatus: Bool {
+        store.error != nil || store.busy || store.isOffline || store.connectionMessage != nil || store.pendingLinkSessionID != nil
+            || store.dashboard.banks.contains(where: { $0.error != nil })
+    }
     var body: some View {
         List {
+            if showsStatus {
             Section {
                 StatusBanner()
                 if let message = store.connectionMessage { Text(message).font(.callout).foregroundStyle(.secondary) }
@@ -471,6 +483,7 @@ struct AccountsView: View {
                     }.padding(.vertical, 8)
                 }
             }.listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 0, leading: 3, bottom: 0, trailing: 3))
+            }
             Section {
                 ForEach(store.orderedAccounts) { account in
                     VStack(spacing: 0) {
@@ -513,12 +526,13 @@ struct AccountsView: View {
         .listStyle(.insetGrouped).listSectionSpacing(18)
         .scrollContentBackground(.hidden).background(Color.tallyCanvas).navigationTitle("Accounts")
         .environment(\.editMode, $editMode)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(editMode.isEditing ? "Done" : "Edit") { withAnimation { editMode = editMode.isEditing ? .inactive : .active } }
-                    .disabled(store.orderedAccounts.count < 2)
+        .tallyRootScreen("Accounts", subtitle: "\(store.orderedAccounts.count) connected") {
+            HStack(spacing: 10) {
+                GlassIconButton(systemImage: editMode.isEditing ? "checkmark" : "arrow.up.arrow.down", label: editMode.isEditing ? "Done reordering" : "Reorder accounts") {
+                    withAnimation { editMode = editMode.isEditing ? .inactive : .active }
+                }.disabled(store.orderedAccounts.count < 2)
+                GlassIconButton(systemImage: "gearshape", label: "Settings") { settings = true }
             }
-            ToolbarItem(placement: .topBarTrailing) { Button { settings = true } label: { Image(systemName: "gearshape") }.accessibilityLabel("Settings") }
         }
         .sheet(isPresented: $settings) { SettingsView() }
         .sheet(item: $management) { AccountManagementView(accountID: $0.id) }
@@ -640,6 +654,7 @@ struct AccountDetailView: View {
             }.padding(20)
         }
         .background(Color.tallyCanvas).navigationTitle(account?.shortBank ?? "Account").navigationBarTitleDisplayMode(.inline)
+        .tallyTopFade()
         .toolbar { ToolbarItem(placement: .topBarTrailing) { RefreshButton() } }
     }
     private func hero(_ account: BankAccount) -> some View {
