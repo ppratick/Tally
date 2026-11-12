@@ -233,8 +233,14 @@ struct ChatView: View {
                     .padding(.horizontal, 12).padding(.vertical, 7).tallyGlass(in: Capsule())
             }
             HStack(alignment: .bottom, spacing: 6) {
+                if inTab {
+                    Menu { chatMenu } label: {
+                        Image(systemName: "ellipsis").font(.system(size: 17, weight: .semibold)).foregroundStyle(.secondary)
+                            .frame(width: 40, height: 48).contentShape(Rectangle())
+                    }.accessibilityLabel("Chat options").padding(.leading, 6)
+                }
                 TextField("Ask about your money…", text: $draft, axis: .vertical)
-                    .font(.body).lineLimit(1...6).focused($composing).padding(.leading, 18).padding(.vertical, 14)
+                    .font(.body).lineLimit(1...6).focused($composing).padding(.leading, inTab ? 0 : 18).padding(.vertical, 14)
                     .accessibilityLabel("Your question")
                     .disabled(dictation.isBusy)
                     .onChange(of: draft) { _, value in if value.count > 4000 { draft = String(value.prefix(4000)) } }
@@ -288,11 +294,7 @@ private struct ChatChrome: ViewModifier {
     let newChat: () -> Void
     func body(content: Content) -> some View {
         if inTab {
-            content.tallyRootScreen("Ask Tally") {
-                GlassIconButton(systemImage: "square.and.pencil", label: "New chat", action: newChat)
-            } trailing: {
-                GlassMenuButton(systemImage: "ellipsis", label: "Chat options") { menu }
-            }
+            content.tallyRootScreen()
         } else {
             content.navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .topBarTrailing) { Menu { menu } label: { Image(systemName: "ellipsis") }.accessibilityLabel("Chat options") } }

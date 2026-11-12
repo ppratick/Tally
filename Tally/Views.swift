@@ -92,7 +92,6 @@ struct RefreshButton: View {
 }
 struct HomeView: View {
     @Environment(TallyStore.self) private var store
-    @State private var showSettings = false
     private var accounts: [BankAccount] {
         store.homeAccounts
     }
@@ -131,12 +130,8 @@ struct HomeView: View {
             }.padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 28)
         }
         .background(Color.tallyCanvas).navigationTitle("Tally")
-        .tallyRootScreen("Tally") {
-            GlassIconButton(systemImage: "arrow.clockwise", label: "Refresh accounts", busy: store.busy) { Task { await store.refreshManually() } }.disabled(store.busy)
-        } trailing: {
-            GlassIconButton(systemImage: "gearshape", label: "Settings") { showSettings = true }
-        }
-        .sheet(isPresented: $showSettings) { SettingsView() }
+        .tallyRootScreen()
+        .refreshable { await store.refreshManually() }
     }
     private var overview: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -513,6 +508,14 @@ struct AccountsView: View {
                     }.padding(.vertical, 5).contentShape(Rectangle())
                 }.buttonStyle(.plain).disabled(store.busy || editMode.isEditing)
             }
+            Section {
+                if store.orderedAccounts.count > 1 {
+                    Button { withAnimation { editMode = editMode.isEditing ? .inactive : .active } } label: {
+                        Label(editMode.isEditing ? "Done reordering" : "Reorder accounts", systemImage: editMode.isEditing ? "checkmark" : "arrow.up.arrow.down")
+                    }
+                }
+                Button { settings = true } label: { Label("Settings", systemImage: "gearshape") }
+            }.foregroundStyle(.primary)
             if store.dashboard.accounts.contains(where: { $0.archived == true }) {
                 Section("Disconnected accounts") {
                     ForEach(store.dashboard.accounts.filter { $0.archived == true }) { account in
@@ -525,13 +528,8 @@ struct AccountsView: View {
         .listStyle(.insetGrouped).listSectionSpacing(18)
         .scrollContentBackground(.hidden).background(Color.tallyCanvas).navigationTitle("Accounts")
         .environment(\.editMode, $editMode)
-        .tallyRootScreen("Accounts") {
-            GlassIconButton(systemImage: editMode.isEditing ? "checkmark" : "arrow.up.arrow.down", label: editMode.isEditing ? "Done reordering" : "Reorder accounts") {
-                withAnimation { editMode = editMode.isEditing ? .inactive : .active }
-            }.disabled(store.orderedAccounts.count < 2)
-        } trailing: {
-            GlassIconButton(systemImage: "gearshape", label: "Settings") { settings = true }
-        }
+        .tallyRootScreen()
+        .refreshable { await store.refreshManually() }
         .sheet(isPresented: $settings) { SettingsView() }
         .sheet(item: $management) { AccountManagementView(accountID: $0.id) }
         .confirmationDialog("Connect another bank", isPresented: $addBank, titleVisibility: .visible) {

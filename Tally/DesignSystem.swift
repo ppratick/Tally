@@ -38,16 +38,15 @@ extension View {
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
     }
 
-    /// Main tabs, styled like Orbit: no system bar and no title row. Glass buttons float at the
-    /// left and right with the screen name in a glass pill between them; content scrolls up under
-    /// them and stays visible, with only a faint fade behind the status bar.
-    func tallyRootScreen<Leading: View, Trailing: View>(_ title: String, @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) -> some View {
-        modifier(RootScreen(title: title, leading: leading(), trailing: trailing(), accessory: EmptyView()))
+    /// Main tabs: no system bar and nothing floating at the top. Content scrolls up to the status bar
+    /// with only a faint fade behind it. Pull down to refresh.
+    func tallyRootScreen() -> some View {
+        modifier(RootScreen(accessory: EmptyView()))
     }
 
-    /// Same header with a floating control (e.g. a segmented switch) under the buttons.
-    func tallyRootScreen<Leading: View, Trailing: View, Accessory: View>(_ title: String, @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing, @ViewBuilder accessory: () -> Accessory) -> some View {
-        modifier(RootScreen(title: title, leading: leading(), trailing: trailing(), accessory: accessory()))
+    /// Same, with one floating control (e.g. a segmented switch) pinned at the top.
+    func tallyRootScreen<Accessory: View>(@ViewBuilder accessory: () -> Accessory) -> some View {
+        modifier(RootScreen(accessory: accessory()))
     }
 }
 
@@ -61,41 +60,30 @@ private struct TopFade: View {
     }
 }
 
-private struct RootScreen<Leading: View, Trailing: View, Accessory: View>: ViewModifier {
-    let title: String
-    let leading: Leading
-    let trailing: Trailing
+private struct RootScreen<Accessory: View>: ViewModifier {
     let accessory: Accessory
+
+    private var fade: some View {
+        LinearGradient(stops: [
+            .init(color: .tallyCanvas.opacity(0.85), location: 0),
+            .init(color: .tallyCanvas.opacity(0.35), location: 0.6),
+            .init(color: .tallyCanvas.opacity(0), location: 1),
+        ], startPoint: .top, endPoint: .bottom)
+    }
 
     func body(content: Content) -> some View {
         content
             .hidingTopScrollEdge()
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0) {
-                VStack(spacing: 10) {
-                    ZStack {
-                        Text(title.uppercased())
-                            .font(.system(size: 14, weight: .bold)).tracking(1)
-                            .padding(.horizontal, 14).padding(.vertical, 8)
-                            .tallyGlass(in: Capsule())
-                            .accessibilityAddTraits(.isHeader)
-                        HStack(spacing: 10) {
-                            leading
-                            Spacer(minLength: 0)
-                            trailing
-                        }
-                    }
+                if Accessory.self == EmptyView.self {
+                    // Just a small gap under the status bar and a faint fade behind it.
+                    Color.clear.frame(height: 8)
+                        .background { fade.padding(.bottom, -12).ignoresSafeArea(edges: .top).allowsHitTesting(false) }
+                } else {
                     accessory
-                }
-                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 8)
-                .background {
-                    // A faint fade, not a band: content stays visible as it passes under the buttons.
-                    LinearGradient(stops: [
-                        .init(color: .tallyCanvas.opacity(0.85), location: 0),
-                        .init(color: .tallyCanvas.opacity(0.35), location: 0.55),
-                        .init(color: .tallyCanvas.opacity(0), location: 1),
-                    ], startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea(edges: .top).allowsHitTesting(false)
+                        .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 8)
+                        .background { fade.ignoresSafeArea(edges: .top).allowsHitTesting(false) }
                 }
             }
     }
