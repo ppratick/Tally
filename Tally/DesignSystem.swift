@@ -38,15 +38,16 @@ extension View {
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
     }
 
-    /// Main tabs: no system bar. A compact title row with floating glass buttons sits above the content,
-    /// which scrolls underneath it with a soft fade rather than a blur.
-    func tallyRootScreen<Trailing: View>(_ title: String, subtitle: String? = nil, @ViewBuilder trailing: () -> Trailing) -> some View {
-        modifier(RootScreen(title: title, subtitle: subtitle, trailing: trailing(), accessory: EmptyView()))
+    /// Main tabs, styled like Orbit: no system bar and no title row. Glass buttons float at the
+    /// left and right with the screen name in a glass pill between them; content scrolls up under
+    /// them and stays visible, with only a faint fade behind the status bar.
+    func tallyRootScreen<Leading: View, Trailing: View>(_ title: String, @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) -> some View {
+        modifier(RootScreen(title: title, leading: leading(), trailing: trailing(), accessory: EmptyView()))
     }
 
-    /// Same header with a pinned control (e.g. a segmented switch) under the title row.
-    func tallyRootScreen<Trailing: View, Accessory: View>(_ title: String, subtitle: String? = nil, @ViewBuilder trailing: () -> Trailing, @ViewBuilder accessory: () -> Accessory) -> some View {
-        modifier(RootScreen(title: title, subtitle: subtitle, trailing: trailing(), accessory: accessory()))
+    /// Same header with a floating control (e.g. a segmented switch) under the buttons.
+    func tallyRootScreen<Leading: View, Trailing: View, Accessory: View>(_ title: String, @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing, @ViewBuilder accessory: () -> Accessory) -> some View {
+        modifier(RootScreen(title: title, leading: leading(), trailing: trailing(), accessory: accessory()))
     }
 }
 
@@ -60,9 +61,9 @@ private struct TopFade: View {
     }
 }
 
-private struct RootScreen<Trailing: View, Accessory: View>: ViewModifier {
+private struct RootScreen<Leading: View, Trailing: View, Accessory: View>: ViewModifier {
     let title: String
-    let subtitle: String?
+    let leading: Leading
     let trailing: Trailing
     let accessory: Accessory
 
@@ -71,26 +72,30 @@ private struct RootScreen<Trailing: View, Accessory: View>: ViewModifier {
             .hidingTopScrollEdge()
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0) {
-                VStack(spacing: 12) {
-                HStack(alignment: .center, spacing: 10) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        if let subtitle {
-                            Text(subtitle.uppercased()).font(.caption2.weight(.semibold)).tracking(0.8).foregroundStyle(.secondary)
+                VStack(spacing: 10) {
+                    ZStack {
+                        Text(title.uppercased())
+                            .font(.system(size: 14, weight: .bold)).tracking(1)
+                            .padding(.horizontal, 14).padding(.vertical, 8)
+                            .tallyGlass(in: Capsule())
+                            .accessibilityAddTraits(.isHeader)
+                        HStack(spacing: 10) {
+                            leading
+                            Spacer(minLength: 0)
+                            trailing
                         }
-                        Text(title).font(.system(size: 30, weight: .bold, design: .rounded)).tracking(-0.5)
-                    }.accessibilityElement(children: .combine).accessibilityAddTraits(.isHeader)
-                    Spacer(minLength: 8)
-                    trailing
+                    }
+                    accessory
                 }
-                accessory
-                }
-                .padding(.horizontal, 20).padding(.top, 6).padding(.bottom, 12)
+                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 8)
                 .background {
-                    // Solid behind the title (content slides away under it), then a short fade. No blur.
-                    VStack(spacing: 0) {
-                        Color.tallyCanvas
-                        LinearGradient(colors: [.tallyCanvas, .tallyCanvas.opacity(0)], startPoint: .top, endPoint: .bottom).frame(height: 22)
-                    }.padding(.bottom, -22).ignoresSafeArea(edges: .top).allowsHitTesting(false)
+                    // A faint fade, not a band: content stays visible as it passes under the buttons.
+                    LinearGradient(stops: [
+                        .init(color: .tallyCanvas.opacity(0.85), location: 0),
+                        .init(color: .tallyCanvas.opacity(0.35), location: 0.55),
+                        .init(color: .tallyCanvas.opacity(0), location: 1),
+                    ], startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea(edges: .top).allowsHitTesting(false)
                 }
             }
     }

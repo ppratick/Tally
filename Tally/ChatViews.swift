@@ -69,7 +69,7 @@ struct ChatView: View {
         }
         .background(Color.tallyCanvas)
         .navigationTitle("Ask Tally")
-        .modifier(ChatChrome(inTab: inTab, menu: AnyView(chatMenu)))
+        .modifier(ChatChrome(inTab: inTab, menu: AnyView(chatMenu), newChat: { if !store.chatMessages.isEmpty && !store.chatSending { confirmClear = true } }))
         .confirmationDialog("Clear this conversation and start a new chat?", isPresented: $confirmClear, titleVisibility: .visible) {
             Button("Clear conversation", role: .destructive) { Task { await store.clearChat() } }
         } message: { Text("This removes the conversation from this device and your Tally server. Usage totals are kept.") }
@@ -285,9 +285,12 @@ struct ChatView: View {
 private struct ChatChrome: ViewModifier {
     let inTab: Bool
     let menu: AnyView
+    let newChat: () -> Void
     func body(content: Content) -> some View {
         if inTab {
-            content.tallyRootScreen("Ask Tally", subtitle: "Your money, explained") {
+            content.tallyRootScreen("Ask Tally") {
+                GlassIconButton(systemImage: "square.and.pencil", label: "New chat", action: newChat)
+            } trailing: {
                 GlassMenuButton(systemImage: "ellipsis", label: "Chat options") { menu }
             }
         } else {

@@ -131,11 +131,10 @@ struct HomeView: View {
             }.padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 28)
         }
         .background(Color.tallyCanvas).navigationTitle("Tally")
-        .tallyRootScreen("Tally", subtitle: Date.now.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())) {
-            HStack(spacing: 10) {
-                GlassIconButton(systemImage: "arrow.clockwise", label: "Refresh accounts", busy: store.busy) { Task { await store.refreshManually() } }.disabled(store.busy)
-                GlassIconButton(systemImage: "gearshape", label: "Settings") { showSettings = true }
-            }
+        .tallyRootScreen("Tally") {
+            GlassIconButton(systemImage: "arrow.clockwise", label: "Refresh accounts", busy: store.busy) { Task { await store.refreshManually() } }.disabled(store.busy)
+        } trailing: {
+            GlassIconButton(systemImage: "gearshape", label: "Settings") { showSettings = true }
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
     }
@@ -526,13 +525,12 @@ struct AccountsView: View {
         .listStyle(.insetGrouped).listSectionSpacing(18)
         .scrollContentBackground(.hidden).background(Color.tallyCanvas).navigationTitle("Accounts")
         .environment(\.editMode, $editMode)
-        .tallyRootScreen("Accounts", subtitle: "\(store.orderedAccounts.count) connected") {
-            HStack(spacing: 10) {
-                GlassIconButton(systemImage: editMode.isEditing ? "checkmark" : "arrow.up.arrow.down", label: editMode.isEditing ? "Done reordering" : "Reorder accounts") {
-                    withAnimation { editMode = editMode.isEditing ? .inactive : .active }
-                }.disabled(store.orderedAccounts.count < 2)
-                GlassIconButton(systemImage: "gearshape", label: "Settings") { settings = true }
-            }
+        .tallyRootScreen("Accounts") {
+            GlassIconButton(systemImage: editMode.isEditing ? "checkmark" : "arrow.up.arrow.down", label: editMode.isEditing ? "Done reordering" : "Reorder accounts") {
+                withAnimation { editMode = editMode.isEditing ? .inactive : .active }
+            }.disabled(store.orderedAccounts.count < 2)
+        } trailing: {
+            GlassIconButton(systemImage: "gearshape", label: "Settings") { settings = true }
         }
         .sheet(isPresented: $settings) { SettingsView() }
         .sheet(item: $management) { AccountManagementView(accountID: $0.id) }
