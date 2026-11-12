@@ -38,15 +38,14 @@ extension View {
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
     }
 
-    /// Main tabs: no system bar and nothing floating at the top. Content scrolls up to the status bar
-    /// with only a faint fade behind it. Pull down to refresh.
-    func tallyRootScreen() -> some View {
-        modifier(RootScreen(accessory: EmptyView()))
+    /// Main tabs: a plain bold title with small borderless icons, pinned over the content.
+    func tallyRootScreen<Trailing: View>(_ title: String, @ViewBuilder trailing: () -> Trailing) -> some View {
+        modifier(RootScreen(title: title, trailing: trailing(), accessory: EmptyView()))
     }
 
-    /// Same, with one floating control (e.g. a segmented switch) pinned at the top.
-    func tallyRootScreen<Accessory: View>(@ViewBuilder accessory: () -> Accessory) -> some View {
-        modifier(RootScreen(accessory: accessory()))
+    /// Same, with a control (e.g. a segmented switch) pinned under the title.
+    func tallyRootScreen<Trailing: View, Accessory: View>(_ title: String, @ViewBuilder trailing: () -> Trailing, @ViewBuilder accessory: () -> Accessory) -> some View {
+        modifier(RootScreen(title: title, trailing: trailing(), accessory: accessory()))
     }
 }
 
@@ -60,32 +59,53 @@ private struct TopFade: View {
     }
 }
 
-private struct RootScreen<Accessory: View>: ViewModifier {
+private struct RootScreen<Trailing: View, Accessory: View>: ViewModifier {
+    let title: String
+    let trailing: Trailing
     let accessory: Accessory
-
-    private var fade: some View {
-        LinearGradient(stops: [
-            .init(color: .tallyCanvas.opacity(0.85), location: 0),
-            .init(color: .tallyCanvas.opacity(0.35), location: 0.6),
-            .init(color: .tallyCanvas.opacity(0), location: 1),
-        ], startPoint: .top, endPoint: .bottom)
-    }
 
     func body(content: Content) -> some View {
         content
             .hidingTopScrollEdge()
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0) {
-                if Accessory.self == EmptyView.self {
-                    // Just a small gap under the status bar and a faint fade behind it.
-                    Color.clear.frame(height: 8)
-                        .background { fade.padding(.bottom, -12).ignoresSafeArea(edges: .top).allowsHitTesting(false) }
-                } else {
-                    accessory
-                        .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 8)
-                        .background { fade.ignoresSafeArea(edges: .top).allowsHitTesting(false) }
+                VStack(spacing: 10) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(title).font(.system(size: 30, weight: .bold, design: .rounded)).tracking(-0.4)
+                            .accessibilityAddTraits(.isHeader)
+                        Spacer(minLength: 8)
+                        trailing
+                    }
+                    if Accessory.self != EmptyView.self { accessory }
+                }
+                .padding(.horizontal, 20).padding(.top, 2).padding(.bottom, 10)
+                .background {
+                    // Page-colored strip behind the title, then a short fade; content slides away under it.
+                    VStack(spacing: 0) {
+                        Color.tallyCanvas
+                        LinearGradient(colors: [.tallyCanvas, .tallyCanvas.opacity(0)], startPoint: .top, endPoint: .bottom).frame(height: 8)
+                    }.padding(.bottom, -8).ignoresSafeArea(edges: .top).allowsHitTesting(false)
                 }
             }
+    }
+}
+
+/// A small borderless header icon.
+struct HeaderIcon: View {
+    let systemImage: String
+    let label: String
+    var busy = false
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            Group {
+                if busy { ProgressView().controlSize(.small) }
+                else { Image(systemName: systemImage).font(.system(size: 18, weight: .medium)) }
+            }
+            .foregroundStyle(Color.tallyAccent)
+            .frame(width: 38, height: 38).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain).accessibilityLabel(label)
     }
 }
 

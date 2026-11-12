@@ -16,7 +16,9 @@ struct InsightsView: View {
             case .bills: RecurringPaymentsView()
             }
         }.background(Color.tallyCanvas).navigationTitle("Insights")
-        .tallyRootScreen { sectionPicker }
+        .tallyRootScreen("Insights") {
+            HeaderIcon(systemImage: "arrow.clockwise", label: "Refresh accounts", busy: store.busy) { Task { await store.refreshManually() } }.disabled(store.busy)
+        } accessory: { sectionPicker }
         .refreshable { await store.refreshManually() }
     }
 }

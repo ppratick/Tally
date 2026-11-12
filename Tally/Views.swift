@@ -92,6 +92,7 @@ struct RefreshButton: View {
 }
 struct HomeView: View {
     @Environment(TallyStore.self) private var store
+    @State private var showSettings = false
     private var accounts: [BankAccount] {
         store.homeAccounts
     }
@@ -130,8 +131,12 @@ struct HomeView: View {
             }.padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 28)
         }
         .background(Color.tallyCanvas).navigationTitle("Tally")
-        .tallyRootScreen()
+        .tallyRootScreen("Tally") {
+            HeaderIcon(systemImage: "arrow.clockwise", label: "Refresh accounts", busy: store.busy) { Task { await store.refreshManually() } }.disabled(store.busy)
+            HeaderIcon(systemImage: "gearshape", label: "Settings") { showSettings = true }
+        }
         .refreshable { await store.refreshManually() }
+        .sheet(isPresented: $showSettings) { SettingsView() }
     }
     private var overview: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -528,7 +533,9 @@ struct AccountsView: View {
         .listStyle(.insetGrouped).listSectionSpacing(18)
         .scrollContentBackground(.hidden).background(Color.tallyCanvas).navigationTitle("Accounts")
         .environment(\.editMode, $editMode)
-        .tallyRootScreen()
+        .tallyRootScreen("Accounts") {
+            HeaderIcon(systemImage: "gearshape", label: "Settings") { settings = true }
+        }
         .refreshable { await store.refreshManually() }
         .sheet(isPresented: $settings) { SettingsView() }
         .sheet(item: $management) { AccountManagementView(accountID: $0.id) }

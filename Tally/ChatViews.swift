@@ -294,7 +294,9 @@ private struct ChatChrome: ViewModifier {
     let newChat: () -> Void
     func body(content: Content) -> some View {
         if inTab {
-            content.tallyRootScreen()
+            content.tallyRootScreen("Ask Tally") {
+                HeaderIcon(systemImage: "square.and.pencil", label: "New chat", action: newChat)
+            }
         } else {
             content.navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .topBarTrailing) { Menu { menu } label: { Image(systemName: "ellipsis") }.accessibilityLabel("Chat options") } }
