@@ -1,6 +1,8 @@
 name: Tally
+configFiles:
+  Debug: Signing.xcconfig
+  Release: Signing.xcconfig
 options:
-  bundleIdPrefix: com.pratick
   deploymentTarget:
     iOS: '18.0'
 settings:
@@ -9,9 +11,9 @@ settings:
     TARGETED_DEVICE_FAMILY: '1'
     GENERATE_INFOPLIST_FILE: YES
     INFOPLIST_KEY_CFBundleDisplayName: Tally
-    INFOPLIST_KEY_TallyKeychainGroup: '$(AppIdentifierPrefix)com.pratick.Tally.shared'
+    INFOPLIST_KEY_TallyKeychainGroup: '$(AppIdentifierPrefix)$(APP_BUNDLE_IDENTIFIER).shared'
     INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
-    PRODUCT_BUNDLE_IDENTIFIER: com.pratick.Tally
+    PRODUCT_BUNDLE_IDENTIFIER: '$(APP_BUNDLE_IDENTIFIER)'
     MARKETING_VERSION: '1.0'
     CURRENT_PROJECT_VERSION: '1'
     SWIFT_STRICT_CONCURRENCY: complete
@@ -30,9 +32,9 @@ targets:
         CFBundleDisplayName: Tally
         NSMicrophoneUsageDescription: Use the microphone to dictate questions to Ask Tally.
         NSSpeechRecognitionUsageDescription: Transcribe your spoken questions. Speech may be processed by Apple when on-device recognition is unavailable.
-        TallyKeychainGroup: '$(AppIdentifierPrefix)com.pratick.Tally.shared'
+        TallyKeychainGroup: '$(AppIdentifierPrefix)$(APP_BUNDLE_IDENTIFIER).shared'
         CFBundleURLTypes:
-          - CFBundleURLName: com.pratick.Tally
+          - CFBundleURLName: '$(APP_BUNDLE_IDENTIFIER)'
             CFBundleURLSchemes: [tally]
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
@@ -59,12 +61,12 @@ targets:
       path: TallyWidget/Info.plist
       properties:
         CFBundleDisplayName: Tally
-        TallyKeychainGroup: '$(AppIdentifierPrefix)com.pratick.Tally.shared'
+        TallyKeychainGroup: '$(AppIdentifierPrefix)$(APP_BUNDLE_IDENTIFIER).shared'
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.pratick.Tally.Widget
+        PRODUCT_BUNDLE_IDENTIFIER: '$(APP_BUNDLE_IDENTIFIER).Widget'
         CODE_SIGN_ENTITLEMENTS: TallyWidget/TallyWidget.entitlements
         CODE_SIGN_STYLE: Automatic
         SKIP_INSTALL: YES

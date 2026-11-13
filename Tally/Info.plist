@@ -22,7 +22,7 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.pratick.Tally</string>
+			<string>$(APP_BUNDLE_IDENTIFIER)</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>tally</string>
@@ -36,7 +36,7 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Transcribe your spoken questions. Speech may be processed by Apple when on-device recognition is unavailable.</string>
 	<key>TallyKeychainGroup</key>
-	<string>$(AppIdentifierPrefix)com.pratick.Tally.shared</string>
+	<string>$(AppIdentifierPrefix)$(APP_BUNDLE_IDENTIFIER).shared</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UIRequiresFullScreen</key>

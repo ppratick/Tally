@@ -1,0 +1,5 @@
+// Public defaults. Override your signing identity in the ignored local file.
+APP_BUNDLE_IDENTIFIER = com.example.Tally
+DEVELOPMENT_TEAM =
+
+#include? "Signing.local.xcconfig"

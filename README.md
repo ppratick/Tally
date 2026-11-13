@@ -62,7 +62,7 @@ For local development, copy `.dev.vars.example` to `.dev.vars`, fill in developm
 
 ## iPhone app
 
-Open `Tally.xcodeproj` from the repository root. Select the **Tally** scheme and your simulator or iPhone. For your own device, select your own signing team and unique bundle identifiers for the app and widget. Keep the shared Keychain group consistent between both targets. If regenerating with XcodeGen, make those choices in `project.yml` first.
+Open `Tally.xcodeproj` from the repository root. Select the **Tally** scheme and your simulator or iPhone. Configure your own signing identity using the local configuration below. The app and widget identifiers and their shared Keychain group follow that configuration automatically.
 
 On first launch, enter **your Worker URL** and **your APP_TOKEN**. Connect your bank through the app. The app obtains the separate widget token from the authenticated backend. Connection details and your optional OpenAI key are stored in the device Keychain.
 
@@ -87,6 +87,20 @@ Backend tests use generated credentials, isolated databases, and mocked provider
 ## Keeping your data private
 
 Keep `wrangler.local.jsonc`, `.dev.vars`, pairing files, database exports, financial caches, and real credentials out of Git and shared archives. Generate separate tokens for the app and widget. A deployment serves one owner's data; do not share its access tokens with other users.
+
+## Signing your own build
+
+The project reads `Signing.xcconfig` and an optional, ignored `Signing.local.xcconfig`. Configure your identity once for all targets:
+
+```sh
+cp Signing.local.xcconfig.example Signing.local.xcconfig
+```
+
+Edit `APP_BUNDLE_IDENTIFIER` to a unique identifier you control and set `DEVELOPMENT_TEAM` to your Apple Team ID for device signing. Simulator builds do not need a team. Keep the local file out of Git. Command-line build-setting overrides still work.
+
+For an update to an existing installation, retain its bundle identifier and signing team so it keeps the same app identity and access to its saved data. Do not overwrite an existing local signing file with the example.
+
+The widget identifier and shared Keychain group are derived from the app identifier, so both targets use the same configured identity. `project.yml` also references this file; XcodeGen regeneration preserves the setup.
 
 ## License
 

@@ -1,0 +1,4 @@
+// Copy to Signing.local.xcconfig and choose your own unique app identifier.
+APP_BUNDLE_IDENTIFIER = com.yourname.Tally
+// Set your Apple Team ID for device signing; leave empty for unsigned Simulator builds.
+DEVELOPMENT_TEAM =

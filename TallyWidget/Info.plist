@@ -26,6 +26,6 @@
 		<string>com.apple.widgetkit-extension</string>
 	</dict>
 	<key>TallyKeychainGroup</key>
-	<string>$(AppIdentifierPrefix)com.pratick.Tally.shared</string>
+	<string>$(AppIdentifierPrefix)$(APP_BUNDLE_IDENTIFIER).shared</string>
 </dict>
 </plist>
