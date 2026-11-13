@@ -59,33 +59,48 @@ private struct TopFade: View {
     }
 }
 
+extension EnvironmentValues {
+    @Entry var tallyScrollHeader: AnyView? = nil
+}
+
+/// Place at the top of a main tab's scroll content: renders that tab's title row, which scrolls away.
+struct TallyScrollHeader: View {
+    @Environment(\.tallyScrollHeader) private var header
+    var body: some View { if let header { header } }
+}
+
 private struct RootScreen<Trailing: View, Accessory: View>: ViewModifier {
     let title: String
     let trailing: Trailing
     let accessory: Accessory
 
+    private var header: some View {
+        VStack(spacing: 14) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(title).font(.system(size: 30, weight: .bold, design: .rounded)).tracking(-0.4)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 8)
+                trailing
+            }
+            if Accessory.self != EmptyView.self { accessory }
+        }
+    }
+
     func body(content: Content) -> some View {
         content
+            .environment(\.tallyScrollHeader, AnyView(header))
             .hidingTopScrollEdge()
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0) {
-                VStack(spacing: 10) {
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text(title).font(.system(size: 30, weight: .bold, design: .rounded)).tracking(-0.4)
-                            .accessibilityAddTraits(.isHeader)
-                        Spacer(minLength: 8)
-                        trailing
+                // The top stays clear: only a faint fade behind the status bar.
+                Color.clear.frame(height: 0)
+                    .background {
+                        LinearGradient(stops: [
+                            .init(color: .tallyCanvas.opacity(0.85), location: 0),
+                            .init(color: .tallyCanvas.opacity(0), location: 1),
+                        ], startPoint: .top, endPoint: .bottom)
+                        .padding(.bottom, -14).ignoresSafeArea(edges: .top).allowsHitTesting(false)
                     }
-                    if Accessory.self != EmptyView.self { accessory }
-                }
-                .padding(.horizontal, 20).padding(.top, 2).padding(.bottom, 10)
-                .background {
-                    // Page-colored strip behind the title, then a short fade; content slides away under it.
-                    VStack(spacing: 0) {
-                        Color.tallyCanvas
-                        LinearGradient(colors: [.tallyCanvas, .tallyCanvas.opacity(0)], startPoint: .top, endPoint: .bottom).frame(height: 8)
-                    }.padding(.bottom, -8).ignoresSafeArea(edges: .top).allowsHitTesting(false)
-                }
             }
     }
 }

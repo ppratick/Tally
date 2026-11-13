@@ -72,6 +72,7 @@ struct RecurringPaymentsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                TallyScrollHeader()
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Recurring bills").font(.title2.weight(.semibold))
                     Text("\(streams.count) active \(streams.count == 1 ? "bill" : "bills") · Original billing schedules")

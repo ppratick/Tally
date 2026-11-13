@@ -31,6 +31,7 @@ struct ChatView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 18) {
+                    TallyScrollHeader().padding(.horizontal, 4)
                     if store.chatMessages.isEmpty { welcome }
                     ForEach(store.chatMessages) { message in
                         messageView(message).id(message.id)

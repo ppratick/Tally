@@ -26,6 +26,7 @@ struct BalanceHistoryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                TallyScrollHeader()
                 HStack {
                     Menu {
                         Picker("Period", selection: $range) {

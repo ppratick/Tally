@@ -99,6 +99,7 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                TallyScrollHeader()
                 overview
                 if let refreshed = store.lastFullRefreshAt {
                     Text("Last refreshed \(refreshed, style: .relative) ago")
@@ -128,7 +129,7 @@ struct HomeView: View {
                         }
                     }
                 }
-            }.padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 28)
+            }.padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 28)
         }
         .background(Color.tallyCanvas).navigationTitle("Tally")
         .tallyRootScreen("Tally") {
@@ -466,6 +467,7 @@ struct AccountsView: View {
     }
     var body: some View {
         List {
+            TallyScrollHeader().listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 4, trailing: 0))
             if showsStatus {
             Section {
                 StatusBanner()

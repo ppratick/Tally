@@ -53,6 +53,7 @@ struct MonthlySpendingView: View {
         let categoryTotal = max(1, categories.filter { $0.amount > 0 }.map(\.amount).reduce(0, +))
         return ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                TallyScrollHeader()
                 HStack {
                     Menu {
                         Picker("Month", selection: $month) {
