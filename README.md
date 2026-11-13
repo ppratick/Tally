@@ -4,6 +4,13 @@ A native iPhone dashboard for your bank balances, transactions, spending, paymen
 
 Tally is free and open source. It is designed for **one owner per backend deployment**. Run your own backend and use your own credentials; this repository does not provide access to the author's financial service. Plaid, AI, and hosting services have separate terms, quotas, and possible charges.
 
+<p align="center">
+  <img src="docs/images/home.png" width="240" alt="Tally home screen with net balance and sample accounts">
+  <img src="docs/images/insights.png" width="240" alt="Monthly spending by category">
+  <img src="docs/images/ask-tally.png" width="240" alt="Ask Tally answering a spending question">
+</p>
+<p align="center"><sub>Screenshots use the app's built-in sample data (Simulator, debug build with <code>-TallyDemo</code>). No real accounts are shown.</sub></p>
+
 ## Features
 
 - Checking and credit-account balances, transactions, spending, and balance history.
