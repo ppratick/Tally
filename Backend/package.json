@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler deploy -c wrangler.local.jsonc",
     "check": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts && node tests/run-worker-test.mjs"
   },

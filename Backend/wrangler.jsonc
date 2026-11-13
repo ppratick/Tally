@@ -1,5 +1,6 @@
+// Public template. Copy to wrangler.local.jsonc and configure your own account.
 {
-  "name": "tally-personal-api",
+  "name": "tally-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-09",
   "workers_dev": true,
@@ -8,9 +9,9 @@
     "enabled": false
   },
   "vars": {
-    "PLAID_ENV": "production",
-    "TRANSACTIONS_REFRESH_ENABLED": "true",
-    "PUBLIC_URL": "https://tally-personal-api.mmkjp6pw26.workers.dev",
+    "PLAID_ENV": "sandbox",
+    "TRANSACTIONS_REFRESH_ENABLED": "false",
+    "PUBLIC_URL": "https://your-worker.your-subdomain.workers.dev",
     "HISTORY_TIME_ZONE": "America/New_York",
     "OPENAI_MODEL": "gpt-6-luna",
     "AI_DAILY_MESSAGE_LIMIT": "100"
@@ -18,8 +19,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "tally-personal",
-      "database_id": "025fe4d5-cffb-4dbb-89cb-9b40d188eea4"
+      "database_name": "tally",
+      "database_id": "00000000-0000-0000-0000-000000000000"
     }
   ],
   "triggers": {

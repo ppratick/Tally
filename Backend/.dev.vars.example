@@ -1,0 +1,11 @@
+# For local development only: copy to .dev.vars (ignored).
+# For production, use: npx wrangler secret put NAME -c wrangler.local.jsonc
+# Generate distinct APP_TOKEN and WIDGET_TOKEN with: openssl rand -hex 32
+APP_TOKEN=
+WIDGET_TOKEN=
+# Generate with: openssl rand -base64 32; keep this key when updating an existing database.
+TOKEN_ENCRYPTION_KEY=
+PLAID_CLIENT_ID=
+PLAID_SECRET=
+# Optional legacy import; leave empty for a new deployment and connect banks in the app.
+PLAID_ITEMS=[]
