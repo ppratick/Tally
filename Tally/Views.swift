@@ -434,6 +434,9 @@ struct TransactionDetailView: View {
                         .background((transaction.pending ? Color.orange : .tallyAccent).opacity(0.08), in: Capsule())
                 }.frame(maxWidth: .infinity).padding(.vertical, 18)
             }
+            if store.dashboard.isCardPayment(transaction) {
+                CardPaymentTrackingSection(transaction: transaction)
+            }
             Section("Details") {
                 LabeledContent("Date", value: transaction.dateValue.formatted(date: .long, time: .omitted))
                 LabeledContent("Category", value: transaction.categoryName)
@@ -720,6 +723,17 @@ struct AccountDetailView: View {
                 Text("Available after pending is calculated; bank holds and timing may cause differences.").font(.caption2).foregroundStyle(.secondary)
             } else {
                 LabeledContent("Available balance", value: money(account.available, currency: account.currency))
+                if store.dashboard.paymentReserve(for: account) > 0 {
+                    LabeledContent("Card payments in transit", value: money(store.dashboard.paymentReserve(for: account), currency: account.currency))
+                    Text("Reserved from your spendable balance until this account reports the withdrawal. The bank-reported balances below are unchanged.").font(.caption).foregroundStyle(.secondary)
+                }
+                ForEach((store.dashboard.paymentTracking ?? []).filter { $0.sourceAccountID == account.id && $0.status != "complete" }) { payment in
+                    if let transaction = store.dashboard.transactions.first(where: { $0.id == payment.transactionID || $0.pendingID == payment.transactionID }) {
+                        NavigationLink { TransactionDetailView(transaction: transaction) } label: {
+                            Label("Payment in transit · " + money(payment.amount, currency: payment.currency), systemImage: "arrow.left.arrow.right")
+                        }
+                    }
+                }
                 LabeledContent("Current balance", value: money(account.current, currency: account.currency))
             }
         }.font(.subheadline).padding(20).tallyCard()

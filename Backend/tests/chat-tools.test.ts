@@ -67,3 +67,12 @@ test('all strict function schemas declare every field as required and disallow e
     assert.deepEqual(tool.parameters.required,Object.keys(tool.parameters.properties));
   }
 });
+
+test('linked payment reserves and miscategorized payment transactions use the same rules as the app',()=>{
+ const data=fixture();
+ data.transactions=[entry('received',-500,{category:'OTHER'}),entry('debit',500,{category:'OTHER',accountID:'cash'}),entry('purchase',25)];
+ data.paymentTracking=[{transactionID:'received',sourceAccountID:'cash',cardAccountID:'card',amount:500,currency:'USD',date:'2026-11-10',matchedTransactionID:'debit',status:'complete',reservedAmount:0,candidateIDs:['debit']}];
+ assert.equal(runFinancialTool('summarizeSpending',filters,data).data.total,25);
+ data.paymentTracking[0].reservedAmount=100;
+ assert.equal((runFinancialTool('getOverview',{},data).data as any).accounts.find((a:any)=>a.id==='cash').displayedBalance,350);
+});

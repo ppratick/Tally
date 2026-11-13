@@ -1,5 +1,6 @@
 import type { dashboard } from './index';
 import type { Entry } from './model';
+import { reservedFor } from './payment-tracking.ts';
 
 export type FinancialData = Awaited<ReturnType<typeof dashboard>>;
 type Args = Record<string, unknown>;
@@ -83,7 +84,8 @@ function filtered(data:FinancialData,args:Args,entries:Entry[]):Entry[] {
 }
 function summary(data:FinancialData,args:Args,entries:Entry[]) {
   const excluded=new Set(['INCOME','TRANSFER_IN','TRANSFER_OUT','LOAN_PAYMENTS']);
-  const rows=filtered(data,args,entries).filter(t=>!excluded.has(t.category));
+  const paymentIDs=new Set((data.paymentTracking??[]).flatMap(p=>[p.transactionID,...(p.matchedTransactionID?[p.matchedTransactionID]:[])]));
+  const rows=filtered(data,args,entries).filter(t=>!excluded.has(t.category)&&!paymentIDs.has(t.id)&&!paymentIDs.has(t.pendingID??''));
   const groups=(key:'category'|'merchant')=>{
     const grouped=new Map<string,number[]>();
     for(const row of rows){const values=grouped.get(row[key])??[];values.push(row.amount);grouped.set(row[key],values);}
@@ -107,9 +109,10 @@ export function runFinancialTool(name:string,args:Args,data:FinancialData,entrie
     const rows=entries,categories=[...new Set(rows.map(t=>t.category))].sort();
     const accounts=data.accounts.map(a=>{
       const pending=money(rows.filter(t=>t.accountID===a.id&&t.pending&&t.currency===a.currency).map(t=>t.amount));
-      return {id:a.id,bank:a.bank,name:a.name,mask:a.mask,type:a.type,currency:a.currency,archived:a.archived===true,
+      const paymentReserve=reservedFor(a.id,data.paymentTracking??[]),reported=a.available??a.current;
+      return {paymentReserve,id:a.id,bank:a.bank,name:a.name,mask:a.mask,type:a.type,currency:a.currency,archived:a.archived===true,
         current:a.current,available:a.available,limit:a.limit,pending,
-        displayedBalance:a.type==='credit'?(a.current===null?null:money([a.current,pending])):(a.available??a.current)};
+        displayedBalance:a.type==='credit'?(a.current===null?null:money([a.current,pending])):(reported===null?null:money([reported,-paymentReserve]))};
     });
     const active=accounts.filter(a=>!a.archived);
     const totals=[...new Set(active.map(a=>a.currency))].map(currency=>{
@@ -123,7 +126,8 @@ export function runFinancialTool(name:string,args:Args,data:FinancialData,entrie
       error:b.error,importComplete:b.importComplete,recurringError:b.recurringError,recurringUpdatedAt:b.recurringUpdatedAt,
       liabilityError:b.liabilityError,liabilityUpdatedAt:b.liabilityUpdatedAt})),
       history:{count:rows.length,earliestDate:rows.at(-1)?.date??null,latestDate:rows[0]?.date??null},categories,
-      balanceNote:'Credit displayedBalance includes pending; checking uses available or current. Archived balances are historical. Never combine currencies.'}};
+      paymentTracking:data.paymentTracking??[],
+      balanceNote:'Credit displayedBalance includes pending; checking uses available or current minus tracked card payment reserves. Pending withdrawals already included in available are not reserved again. History shows bank observations without reserves. Archived balances are historical. Never combine currencies.'}};
   }
   if(name==='summarizeSpending'){const result=summary(data,args,entries);return {data:result,transactions:result.examples};}
   if(name==='compareSpending') {

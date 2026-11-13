@@ -120,6 +120,19 @@ import Foundation
         expect(weekly.monthlyEstimate, 52)
         let unknownSchedule = RecurringPayment(id: "unknown", accountID: "chase", merchant: "Transfer", direction: "outgoing", category: "LOAN_PAYMENTS", frequency: "UNKNOWN", nextDate: nil, lastDate: "2026-11-01", averageAmount: nil, lastAmount: nil, currency: "USD", active: true, status: "MATURE", transactionIDs: [])
         precondition(!unknownSchedule.isBill && unknownSchedule.monthlyEstimate == nil)
+        var reserved = Dashboard(accounts: [checking, chase])
+        reserved.paymentTracking = [CardPaymentTracking(transactionID: "card-payment", sourceAccountID: checking.id, cardAccountID: chase.id, amount: 500, currency: "USD", date: "2026-11-13", matchedTransactionID: nil, status: "waiting", reservedAmount: 500, candidateIDs: [])]
+        expect(reserved.displayBalance(for: checking), 3901.82)
+        expect(reserved.paymentReserve(for: checking), 500)
+        expect(reserved.cash, 3901.82)
+        expect(reserved.displayBalance(for: chase), 227.10)
+        precondition(reserved.balanceLabel(for: checking) == "after payments")
+        reserved.transactions = [expense("card-payment", amount: -500, category: "OTHER"), expense("real-purchase", amount: 25)]
+        expect(reserved.spending(month: bankDay("2026-11-01")!, accountIDs: ["chase"]).total, 25)
+        let decoded = try! JSONDecoder().decode(Dashboard.self, from: JSONEncoder().encode(reserved))
+        expect(decoded.paymentReserve(for: checking), 500)
+        let legacy = try! JSONDecoder().decode(Dashboard.self, from: Data(#"{"accounts":[],"transactions":[],"banks":[]}"#.utf8))
+        precondition(legacy.paymentTracking == nil)
         print("Payment and spending tests passed: due dates, net refunds, excluded transfers/card payments/income, month boundaries, foreign currencies, pending replacements and recurring normalization.")
         print("Balance and activity tests passed: credit availability, fractional timestamps, 0/3/5/7 pending lists, incoming/outgoing and status filters, per-account isolation, search, archived history preservation, daily history and carried balances, credits, posted replacements, and missing values.")
     }

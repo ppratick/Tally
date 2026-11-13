@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {randomBytes} from 'node:crypto';
+import worker from '../src/index.ts';
+import {database} from './fixtures/database.ts';
+import {runFinancialTool} from '../src/chat-tools.ts';
+const {DB,sqlite}=database(readFileSync('schema.sql','utf8'));
+const env:any={DB,PLAID_ITEMS:'[]',APP_TOKEN:randomBytes(32).toString('hex'),WIDGET_TOKEN:randomBytes(32).toString('hex')};
+sqlite.prepare("INSERT INTO app_settings VALUES('connections_initialized','1')").run();
+sqlite.prepare('INSERT INTO connections(item_id,institution_id,created_at) VALUES(?,?,?)').run('bank','test','2026-11-13');
+const cash={id:'cash',bankID:'bank',bank:'Test',name:'Checking',mask:'0000',type:'depository',current:1000,available:1000,limit:null,currency:'USD'};
+const card={...cash,id:'card',type:'credit',current:0,available:2000,limit:2000};
+const payment={id:'payment',accountID:'card',merchant:'Payment received',amount:-500,currency:'USD',date:'2026-11-13',pending:false,category:'LOAN_PAYMENTS',pendingID:null};
+const snapshot:any={bank:'Test',accounts:[cash,card],transactions:[payment],importComplete:true};
+const save=()=>sqlite.prepare('INSERT INTO snapshots(id,data) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data').run('bank',JSON.stringify(snapshot));save();
+const ctx:any={};
+const request=(method='GET',body?:any,token=env.APP_TOKEN,path='/v1/card-payments')=>worker.fetch(new Request('https://example.com'+path,{method,headers:{Authorization:'Bearer '+token},...(body?{body:JSON.stringify(body)}:{})}),env,ctx);
+const link={transactionID:'payment',sourceAccountID:'cash'};
+assert.equal((await request('PUT',link,env.WIDGET_TOKEN)).status,401);
+assert.equal((await request('PUT',{...link,sourceAccountID:'card'})).status,400);
+let response=await request('PUT',link);assert.equal(response.status,200);
+let data:any=await response.json();assert.equal(data.paymentTracking[0].reservedAmount,500);
+assert.equal((runFinancialTool('getOverview',{},data).data as any).accounts.find((a:any)=>a.id==='cash').displayedBalance,500);
+let widget:any=await (await request('GET',undefined,env.WIDGET_TOKEN,'/v1/widget')).json();assert.equal(widget.accounts[0].balance,500);assert.equal('transactions' in widget,false);
+assert.equal((await request('PUT',link)).status,200);assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM tracked_card_payments').get()!.n,1);
+const debit={...payment,id:'debit',accountID:'cash',amount:500,merchant:'Card payment',pending:true};
+snapshot.transactions.push(debit);snapshot.accounts[0].available=500;save();
+data=await (await request('GET',undefined,env.APP_TOKEN,'/v1/dashboard')).json();assert.equal(data.paymentTracking[0].reservedAmount,0);
+assert.equal((runFinancialTool('getOverview',{},data).data as any).accounts.find((a:any)=>a.id==='cash').displayedBalance,500);
+assert.equal((await request('PUT',{...link,matchedTransactionID:'unknown'})).status,400);
+assert.equal((await request('PUT',{...link,matchedTransactionID:'debit'})).status,200);
+snapshot.transactions=snapshot.transactions.filter((t:any)=>t.id!=='debit');snapshot.transactions.push({...debit,id:'posted',pending:false,pendingID:'debit'});save();
+data=await (await request('GET',undefined,env.APP_TOKEN,'/v1/dashboard')).json();assert.equal(data.paymentTracking[0].status,'complete');
+assert.equal(sqlite.prepare('SELECT matched_transaction_id AS id FROM tracked_card_payments').get()!.id,'posted');
+// A second equal withdrawal must not undo a confirmed match.
+snapshot.transactions.push({...debit,id:'unrelated-second',pending:false});save();
+data=await (await request('GET',undefined,env.APP_TOKEN,'/v1/dashboard')).json();assert.equal(data.paymentTracking[0].status,'complete');
+// The received card payment itself can also transition from pending to posted.
+snapshot.transactions=snapshot.transactions.filter((t:any)=>t.id!=='payment');
+snapshot.transactions.push({...payment,id:'posted-payment',pendingID:'payment'});save();
+assert.equal((await request('PUT',link)).status,200);
+assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM tracked_card_payments').get()!.n,1);
+
+assert.equal((await request('DELETE',{transactionID:'payment'})).status,200);
+assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM tracked_card_payments').get()!.n,0);
+console.log('Payment tracking HTTP integration passed: authorization, validation, persistence, idempotence, app/AI/widget consistency, no double reserve, pending replacement, removal.');

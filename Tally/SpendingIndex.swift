@@ -10,8 +10,12 @@ struct SpendingIndex {
     }
     private var buckets: [String: Bucket] = [:]
     private let replaced: Set<String>
+    private let paymentIDs: Set<String>
     init(dashboard: Dashboard) {
         let transactions = dashboard.sortedTransactions
+        paymentIDs = Set((dashboard.paymentTracking ?? []).flatMap { payment in
+            [payment.transactionID] + (payment.matchedTransactionID.map { [$0] } ?? [])
+        })
         replaced = Set(transactions.filter { !$0.pending }.compactMap(\.pendingID))
         for transaction in transactions {
             let key = String(transaction.date.prefix(7))
@@ -38,7 +42,7 @@ struct SpendingIndex {
         let key = String(format: "%04d-%02d", parts.year!, parts.month!)
         let excluded: Set<String> = ["INCOME", "TRANSFER_IN", "TRANSFER_OUT", "LOAN_PAYMENTS"]
         let eligible = (buckets[key]?.transactions ?? []).filter {
-            accountIDs.contains($0.accountID) && $0.currency == "USD" && !excluded.contains($0.category)
+            accountIDs.contains($0.accountID) && $0.currency == "USD" && !excluded.contains($0.category) && !paymentIDs.contains($0.id) && !($0.pendingID.map { paymentIDs.contains($0) } ?? false)
         }
         return MonthlySpending(month: start, transactions: eligible.filter { !$0.pending },
             pending: eligible.filter { $0.pending && !replaced.contains($0.id) })

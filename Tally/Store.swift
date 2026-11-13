@@ -239,6 +239,24 @@ enum AppError: LocalizedError {
             updateWidget()
         } catch { self.error = error.localizedDescription; isOffline = true }
     }
+    func trackCardPayment(_ transaction: BankTransaction, sourceAccountID: String?, matchedTransactionID: String? = nil) async -> Bool {
+        guard let settings, unlocked, !busy else { return false }
+        busy = true
+        defer { busy = false }
+        do {
+            struct PaymentRequest: Encodable {
+                let transactionID: String
+                let sourceAccountID: String?
+                let matchedTransactionID: String?
+            }
+            let body = try JSONEncoder().encode(PaymentRequest(transactionID: dashboard.paymentTracking?.first(where: { $0.transactionID == transaction.id || $0.transactionID == transaction.pendingID })?.transactionID ?? transaction.id, sourceAccountID: sourceAccountID, matchedTransactionID: matchedTransactionID))
+            let result: Dashboard = try await request("/v1/card-payments", method: sourceAccountID == nil ? "DELETE" : "PUT", settings: settings, body: body)
+            dashboard = result; savedAt = .now
+            try persistDashboard()
+            updateWidget()
+            return true
+        } catch { self.error = "Couldn't save the payment link. Refresh and try again."; return false }
+    }
     func refreshManually() async {
         await refresh(path: "/v1/balances")
     }

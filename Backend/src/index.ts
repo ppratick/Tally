@@ -12,6 +12,7 @@ import { enqueueScheduledRefreshes, refreshMinutes, refreshIntervals, recordFull
 import { startSession, finishSession, enqueueLinkByToken, pendingSessionID } from './link';
 import { chatRoute, pruneChats } from './chat';
 import { readText, BodyLimitError } from './http';
+import { loadPaymentTracking, reservedFor, isCardPayment, withdrawalCandidates, type TrackedPayment } from './payment-tracking';
 function transaction(t: Transaction): Entry {
   return {id:t.transaction_id, accountID:t.account_id, merchant:t.merchant_name || t.original_description || t.name || 'Transaction',
     amount:t.amount,currency:t.iso_currency_code || t.unofficial_currency_code || 'USD',date:t.date,pending:t.pending,
@@ -125,7 +126,9 @@ export async function dashboard(env:Env) {
   const visible=entries.filter(e=>!hidden.has(e.id));
   const queued=(await env.DB.prepare("SELECT subject,state,last_error FROM sync_jobs WHERE kind IN ('bank','refresh')").all<{subject:string;state:string;last_error:string|null}>()).results;
   const refreshed=await fullRefreshTimes(env),active=visible.filter(e=>e.active);
-  return {accounts:visible.flatMap(e=>e.accounts.map(a=>({...a,archived:!e.active||a.archived===true}))),transactions:visible.flatMap(e=>e.transactions),
+  const accounts=visible.flatMap(e=>e.accounts.map(a=>({...a,archived:!e.active||a.archived===true}))),transactions=visible.flatMap(e=>e.transactions);
+  const paymentTracking=await loadPaymentTracking(env,accounts,transactions);
+  return {accounts,transactions,paymentTracking,
     automaticRefreshMinutes:await refreshMinutes(env),
     lastFullRefreshAt:active.length&&active.every(e=>refreshed.has(e.id))?oldestSourceTime(active.map(e=>refreshed.get(e.id))):null,
     statements:visible.flatMap(e=>e.insights.statements),recurring:visible.flatMap(e=>e.insights.recurring),
@@ -135,18 +138,18 @@ export async function dashboard(env:Env) {
       recurringError:e.insights.recurringError||null,recurringUpdatedAt:e.insights.recurringUpdatedAt||null,error:e.active?(e.error||queued.find(j=>j.subject===e.id&&j.state==='blocked')?.last_error||null):null,importComplete:e.importComplete||false}))};
 }
 async function widgetSnapshot(env:Env) {
-  const jobs=await relinkJobs(env);
-  const hidden=new Set(jobs.filter(j=>j.status!=='complete').map(j=>j.new_bank_id));
-  const connections=(await connectionMetadata(env)).filter(b=>!hidden.has(b.item_id));
-  const accounts=[];
-  for(const bank of connections) {
-    const state=await load(env,bank.item_id,false);
-    for(const account of state.accounts.filter(a=>!a.archived)) {
-      const pending=pendingAmount(state,account.id,account.currency);
-      accounts.push({id:account.id,bank:account.bank,name:account.name,mask:account.mask,isCredit:account.type==='credit',currency:account.currency,
-        updatedAt:oldestSourceTime([state.balanceUpdatedAt,state.bankUpdatedAt]),balance:account.type==='credit'?(account.current==null?null:Math.round((account.current+pending)*100)/100):(account.available??account.current)});
-    }
-  }
+  const data=await dashboard(env);
+  const replacements=new Set(data.transactions.filter(t=>!t.pending).map(t=>t.pendingID));
+  const accounts=data.accounts.filter(a=>!a.archived).map(account=>{
+    const bank=data.banks.find(b=>b.id===account.bankID);
+    const pending=data.transactions.filter(t=>t.accountID===account.id&&t.currency===account.currency&&t.pending&&
+      !replacements.has(t.id)).reduce((sum,t)=>sum+Math.round(t.amount*100),0)/100;
+    const reported=account.available??account.current;
+    return {id:account.id,bank:account.bank,name:account.name,mask:account.mask,isCredit:account.type==='credit',currency:account.currency,
+      updatedAt:oldestSourceTime([bank?.balanceUpdatedAt,bank?.updatedAt]),balance:account.type==='credit'?
+        (account.current==null?null:Math.round((account.current+pending)*100)/100):
+        (reported==null?null:Math.round((reported-reservedFor(account.id,data.paymentTracking))*100)/100)};
+  });
   return {date:new Date().toISOString(),accounts};
 }
 function json(value:unknown,status=200):Response {return Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}
@@ -207,6 +210,33 @@ export default {
         if(!bank)return json({error:'Connection not found'},404);
         try{await plaid(env,'/item/remove',{access_token:bank.access_token});}catch(e){if(!(e instanceof PlaidError&&e.code==='ITEM_NOT_FOUND'))throw e;}
         await env.DB.prepare('UPDATE connections SET active=0,token_encrypted=NULL,disconnected_at=? WHERE item_id=?').bind(new Date().toISOString(),id).run();
+        return json(await dashboard(env));
+      }
+      if(path==='/v1/card-payments'&&['PUT','DELETE'].includes(request.method)) {
+        let body;try{body=JSON.parse(await readText(request,2048));}catch(error){if(error instanceof BodyLimitError)throw error;return json({error:'Invalid payment'},400);}
+        if(!body||typeof body.transactionID!=='string'||body.transactionID.length>200)return json({error:'Invalid payment'},400);
+        if(request.method==='DELETE') {
+          await env.DB.prepare('DELETE FROM tracked_card_payments WHERE transaction_id=?').bind(body.transactionID).run();
+          return json(await dashboard(env));
+        }
+        const data=await dashboard(env),payment=data.transactions.find(t=>!t.pending&&t.pendingID===body.transactionID)??data.transactions.find(t=>t.id===body.transactionID);
+        const source=data.accounts.find(a=>a.id===body.sourceAccountID&&a.type==='depository'&&!a.archived);
+        if(!payment||!isCardPayment(payment,data.accounts)||!source||source.currency!==payment.currency)
+          return json({error:'Choose a payment received by a card and an active source account in the same currency.'},400);
+        const tracked:TrackedPayment={transactionID:body.transactionID,sourceAccountID:source.id,cardAccountID:payment.accountID,
+          amount:Math.abs(payment.amount),currency:payment.currency,date:payment.date,
+          matchedTransactionID:data.paymentTracking.find(p=>p.transactionID===body.transactionID&&p.sourceAccountID===source.id)?.matchedTransactionID??null};
+        if(body.matchedTransactionID!=null) {
+          if(typeof body.matchedTransactionID!=='string'||!withdrawalCandidates(tracked,data.transactions).some(t=>t.id===body.matchedTransactionID))
+            return json({error:'Choose a matching withdrawal from this source account.'},400);
+          if(data.paymentTracking.some(p=>p.transactionID!==body.transactionID&&p.matchedTransactionID===body.matchedTransactionID))
+            return json({error:'That withdrawal is already linked to another payment.'},409);
+          tracked.matchedTransactionID=body.matchedTransactionID;
+        }
+        await env.DB.prepare(`INSERT INTO tracked_card_payments(transaction_id,source_account_id,card_account_id,amount,currency,payment_date,matched_transaction_id)
+          VALUES(?,?,?,?,?,?,?) ON CONFLICT(transaction_id) DO UPDATE SET source_account_id=excluded.source_account_id,
+          amount=excluded.amount,payment_date=excluded.payment_date,matched_transaction_id=excluded.matched_transaction_id`)
+          .bind(tracked.transactionID,tracked.sourceAccountID,tracked.cardAccountID,tracked.amount,tracked.currency,tracked.date,tracked.matchedTransactionID).run();
         return json(await dashboard(env));
       }
       if(path==='/v1/dashboard' && request.method==='GET')return json(await dashboard(env));

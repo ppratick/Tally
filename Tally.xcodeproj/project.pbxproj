@@ -28,6 +28,7 @@
 		9F2BFCD5D4CDDA004D519330 /* TallyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0CCCCECB1E61EDCE2D768A /* TallyTheme.swift */; };
 		9F7A5FE8DD833A297C104A93 /* ChatDictation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C6449844F19A287B7E2178 /* ChatDictation.swift */; };
 		AC7F75CC7FC57FB8EAB84CEF /* ChatAnswerText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8842DDC53BED9FD353C64AA2 /* ChatAnswerText.swift */; };
+		B4293F80AC403405CC2725EB /* CardPaymentTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF3EB4B938165DDD672D3A1 /* CardPaymentTrackingView.swift */; };
 		C4929C1A11392AA68B0DDD8E /* PaymentsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2761D6EDC7F32E7A50089C22 /* PaymentsViews.swift */; };
 		D6E4C011A51B260ADE738668 /* SpendingIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82D31C9F7A54C9D6F31E1E1 /* SpendingIndex.swift */; };
 		EA9C6C7E1CC87FE54D6C1FD6 /* SpendingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F8AF60DA7A5537290BE930 /* SpendingViews.swift */; };
@@ -61,7 +62,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		760E62585F7D4D1B881994F5 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		055ECADCF90842BF840EA06B /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
 		096DC445A470F138D54384CF /* Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views.swift; sourceTree = "<group>"; };
 		0E91360750E6493DD7621468 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -73,6 +73,8 @@
 		4DCF1A5BC6FA366C4B658D35 /* Tally.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tally.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5DE33F8713A9BA1BEBF6FF41 /* ChatViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViews.swift; sourceTree = "<group>"; };
 		6A4A841014BA9A72ECE39915 /* FinanceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceModels.swift; sourceTree = "<group>"; };
+		6EF3EB4B938165DDD672D3A1 /* CardPaymentTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPaymentTrackingView.swift; sourceTree = "<group>"; };
+		760E62585F7D4D1B881994F5 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		7F575993EA15D30937E5B831 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8842DDC53BED9FD353C64AA2 /* ChatAnswerText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAnswerText.swift; sourceTree = "<group>"; };
 		952D829F4BE8048607324226 /* TallyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TallyApp.swift; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 			children = (
 				CEC84C254979651E40C401D7 /* AISettingsView.swift */,
 				0E91360750E6493DD7621468 /* Assets.xcassets */,
+				6EF3EB4B938165DDD672D3A1 /* CardPaymentTrackingView.swift */,
 				8842DDC53BED9FD353C64AA2 /* ChatAnswerText.swift */,
 				B5C6449844F19A287B7E2178 /* ChatDictation.swift */,
 				055ECADCF90842BF840EA06B /* ChatModels.swift */,
@@ -275,6 +278,7 @@
 			files = (
 				0B7C364C723106D58A742035 /* AISettingsView.swift in Sources */,
 				9AE3EDED9F028D9761E8FEB6 /* AuthenticatedSession.swift in Sources */,
+				B4293F80AC403405CC2725EB /* CardPaymentTrackingView.swift in Sources */,
 				AC7F75CC7FC57FB8EAB84CEF /* ChatAnswerText.swift in Sources */,
 				9F7A5FE8DD833A297C104A93 /* ChatDictation.swift in Sources */,
 				F7F93DFD4132BD5AB649ED59 /* ChatModels.swift in Sources */,

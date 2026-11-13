@@ -84,6 +84,19 @@ struct BankConnection: Codable, Identifiable {
         }
     }
 }
+struct CardPaymentTracking: Codable, Identifiable {
+    let transactionID: String
+    let sourceAccountID: String
+    let cardAccountID: String
+    let amount: Double
+    let currency: String
+    let date: String
+    let matchedTransactionID: String?
+    let status: String
+    let reservedAmount: Double
+    let candidateIDs: [String]
+    var id: String { transactionID }
+}
 struct Dashboard: Codable {
     var accounts: [BankAccount] = []
     var transactions: [BankTransaction] = []
@@ -94,6 +107,7 @@ struct Dashboard: Codable {
     var pendingLinkID: String? = nil
     var statements: [CreditStatement]? = nil
     var recurring: [RecurringPayment]? = nil
+    var paymentTracking: [CardPaymentTracking]? = nil
     var activeAccounts: [BankAccount] { accounts.filter { $0.archived != true } }
     var sortedTransactions: [BankTransaction] {
         let accountIDs = Set(accounts.map(\.id))
@@ -115,7 +129,15 @@ struct Dashboard: Codable {
             return sumMoney([current, pendingTotal(for: account)])
         }
         // Available already reflects the bank's pending activity: never add it again.
-        return account.available ?? account.current
+        return (account.available ?? account.current).map { sumMoney([$0, -paymentReserve(for: account)]) }
+    }
+    func paymentReserve(for account: BankAccount) -> Double {
+        sumMoney((paymentTracking ?? []).filter { $0.sourceAccountID == account.id && $0.currency == account.currency }.map(\.reservedAmount))
+    }
+    func isCardPayment(_ transaction: BankTransaction) -> Bool {
+        guard transaction.amount < 0, accounts.contains(where: { $0.id == transaction.accountID && $0.isCredit && $0.archived != true }) else { return false }
+        return ["LOAN_PAYMENTS", "TRANSFER_IN", "TRANSFER_OUT"].contains(transaction.category) ||
+            transaction.merchant.range(of: #"\bpayment\b|autopay|auto pay"#, options: [.regularExpression, .caseInsensitive]) != nil
     }
     func recentActivity(accountID: String? = nil, minimumCount: Int = 5) -> [BankTransaction] {
         let entries = sortedTransactions
@@ -133,7 +155,7 @@ struct Dashboard: Codable {
         return max(0, total / limit)
     }
     func balanceLabel(for account: BankAccount) -> String {
-        account.isCredit ? "incl. pending" : (account.available == nil ? "current" : "available")
+        account.isCredit ? "incl. pending" : (paymentReserve(for: account) > 0 ? "after payments" : (account.available == nil ? "current" : "available"))
     }
     func pendingTotal(for account: BankAccount) -> Double {
         let accountIDs = Set(accounts.map(\.id))
